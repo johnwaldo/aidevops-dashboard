@@ -1,0 +1,8 @@
+export function SettingsPage() {
+  return (
+    <div className="p-6 space-y-6">
+      <h1 className="text-xl font-semibold font-[Plus_Jakarta_Sans]">Settings</h1>
+      <p className="text-sm text-[#71717a]">Framework configuration, API keys, and model settings.</p>
+    </div>
+  );
+}
