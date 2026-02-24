@@ -6,37 +6,19 @@ import { Badge } from "@/components/ui/badge";
 interface Project {
   name: string;
   description: string;
-  repo: string;
+  url: string;
   platform: string;
   branch: string;
   lastCommit: { sha: string; message: string; author: string; time: string };
-  ci: "passing" | "failing" | "none";
-  quality: string;
+  ci: string;
   issues: number;
   prs: number;
-  vulns: { critical: number; high: number; medium: number };
   language: string;
-  category: string;
-  tokenSpend: number;
-  lastDeploy: string | null;
+  visibility: string;
+  updatedAt: string;
 }
 
-const categoryColors: Record<string, string> = {
-  "Custom Water": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  Infrastructure: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-};
-
-const qualityColors: Record<string, string> = {
-  A: "text-emerald-400",
-  "A-": "text-emerald-400",
-  "B+": "text-cyan-400",
-  B: "text-cyan-400",
-  "—": "text-[#71717a]",
-};
-
 export function ProjectCard({ project }: { project: Project }) {
-  const totalVulns = project.vulns.critical + project.vulns.high + project.vulns.medium;
-
   return (
     <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4 transition-all hover:border-[#2e2e3e] hover:shadow-lg hover:shadow-black/20 group cursor-pointer">
       <div className="flex items-start justify-between mb-2">
@@ -46,8 +28,8 @@ export function ProjectCard({ project }: { project: Project }) {
           </h3>
           <p className="text-xs text-[#71717a] mt-0.5 truncate">{project.description}</p>
         </div>
-        <Badge variant="outline" className={cn("shrink-0 ml-2 text-[10px] border", categoryColors[project.category])}>
-          {project.category}
+        <Badge variant="outline" className="shrink-0 ml-2 text-[10px] border border-[#1e1e2e] text-[#71717a]">
+          {project.visibility}
         </Badge>
       </div>
 
@@ -70,9 +52,6 @@ export function ProjectCard({ project }: { project: Project }) {
 
       <div className="flex items-center gap-3 mb-3">
         <StatusBadge status={project.ci} label={project.ci === "none" ? "No CI" : project.ci === "passing" ? "Passing" : "Failing"} />
-        <span className={cn("text-xs font-mono font-bold", qualityColors[project.quality] ?? "text-[#71717a]")}>
-          {project.quality}
-        </span>
         <Badge variant="outline" className="text-[10px] border-[#1e1e2e] text-[#71717a]">
           {project.language}
         </Badge>
@@ -82,11 +61,8 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="flex items-center gap-3">
           <span>{project.issues} issues</span>
           <span>{project.prs} PRs</span>
-          <span className={cn(totalVulns > 0 ? "text-amber-400" : "")}>
-            {totalVulns} vulns
-          </span>
         </div>
-        <span className="text-cyan-400/70">${project.tokenSpend.toFixed(0)}/mo</span>
+        <span className={cn("text-[#71717a]")}>{project.platform}</span>
       </div>
     </div>
   );

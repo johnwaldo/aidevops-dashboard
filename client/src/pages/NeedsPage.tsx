@@ -1,7 +1,21 @@
 import { NeedsList } from "@/components/needs/NeedsList";
-import { needsMock } from "@/lib/mock-data";
+import { useApiData } from "@/hooks/useApiData";
+
+interface Need {
+  id: number;
+  type: string;
+  title: string;
+  description: string;
+  source: string;
+  priority: string;
+  url: string;
+  createdAt: string;
+}
 
 export function NeedsPage() {
+  const { data: needs } = useApiData<Need[]>("needs", 30);
+  const count = needs?.length ?? 0;
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -9,9 +23,11 @@ export function NeedsPage() {
           <h1 className="text-xl font-semibold font-[Plus_Jakarta_Sans]">Needs From Me</h1>
           <p className="text-sm text-[#71717a] mt-1">Items requiring your attention, grouped by priority.</p>
         </div>
-        <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-rose-500/20 px-2 text-sm font-bold text-rose-400">
-          {needsMock.length}
-        </span>
+        {count > 0 && (
+          <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-rose-500/20 px-2 text-sm font-bold text-rose-400">
+            {count}
+          </span>
+        )}
       </div>
       <NeedsList />
     </div>

@@ -1,9 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { kanbanMock } from "@/lib/mock-data";
+import { useApiData } from "@/hooks/useApiData";
 import { KanbanColumn } from "./KanbanColumn";
 import { TaskCard } from "./TaskCard";
+import { LoadingPanel, EmptyState } from "@/components/shared/LoadingPanel";
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  tags: string[];
+  agents: string[];
+  estimate: string;
+  started: string | null;
+  completed: string | null;
+}
+
+interface TasksData {
+  backlog: Task[];
+  ready: Task[];
+  inProgress: Task[];
+  inReview: Task[];
+  done: Task[];
+  declined: Task[];
+}
 
 type ColumnKey = "backlog" | "planned" | "inProgress" | "pendingApproval" | "recentlyCompleted";
 
@@ -15,56 +37,70 @@ const columnConfig: { key: ColumnKey; title: string; highlight?: boolean }[] = [
   { key: "recentlyCompleted", title: "Completed" },
 ];
 
-function getTaskProps(task: Record<string, unknown>, columnKey: ColumnKey) {
+function getTaskProps(task: Task, columnKey: ColumnKey) {
   const base = {
-    id: task.id as string,
-    title: task.title as string,
-    project: task.project as string,
-    priority: task.priority as string,
-    agent: (task.agent as string | null) ?? null,
+    id: task.id,
+    title: task.title,
+    project: task.tags?.[0] ?? "",
+    priority: task.priority,
+    agent: task.agents?.[0] ?? null,
   };
 
   switch (columnKey) {
     case "backlog":
-      return { ...base, timeLabel: "Est", timeValue: task.estimate as string };
+      return { ...base, timeLabel: "Est", timeValue: task.estimate };
     case "planned":
-      return { ...base, timeLabel: "Est", timeValue: task.estimate as string };
+      return { ...base, timeLabel: "Est", timeValue: task.estimate };
     case "inProgress":
-      return { ...base, timeLabel: "Elapsed", timeValue: task.elapsed as string };
+      return { ...base, timeLabel: "Started", timeValue: task.started ?? "—" };
     case "pendingApproval":
-      return { ...base, timeLabel: "Waiting", timeValue: task.waiting as string, requires: task.requires as string };
+      return { ...base, timeLabel: "In Review", timeValue: task.started ?? "—" };
     case "recentlyCompleted":
-      return { ...base, timeLabel: "Total", timeValue: task.elapsed as string };
+      return { ...base, timeLabel: "Completed", timeValue: task.completed ?? "—" };
   }
 }
 
+function mapApiToColumns(data: TasksData): Record<ColumnKey, Task[]> {
+  return {
+    backlog: data.backlog ?? [],
+    planned: data.ready ?? [],
+    inProgress: data.inProgress ?? [],
+    pendingApproval: data.inReview ?? [],
+    recentlyCompleted: data.done ?? [],
+  };
+}
+
 export function KanbanBoard() {
-  const [columns, setColumns] = useState(() => {
+  const { data, loading, error, refresh } = useApiData<TasksData>("tasks", 30);
+  const [columns, setColumns] = useState<Record<ColumnKey, string[]> | null>(null);
+  const [taskMap, setTaskMap] = useState<Record<string, Task>>({});
+
+  useEffect(() => {
+    if (!data) return;
+    const mapped = mapApiToColumns(data);
+    const allTasks: Task[] = [];
     const cols: Record<ColumnKey, string[]> = {
-      backlog: kanbanMock.backlog.map((t) => t.id),
-      planned: kanbanMock.planned.map((t) => t.id),
-      inProgress: kanbanMock.inProgress.map((t) => t.id),
-      pendingApproval: kanbanMock.pendingApproval.map((t) => t.id),
-      recentlyCompleted: kanbanMock.recentlyCompleted.map((t) => t.id),
+      backlog: [],
+      planned: [],
+      inProgress: [],
+      pendingApproval: [],
+      recentlyCompleted: [],
     };
-    return cols;
-  });
-
-  const allTasks = [
-    ...kanbanMock.backlog,
-    ...kanbanMock.planned,
-    ...kanbanMock.inProgress,
-    ...kanbanMock.pendingApproval,
-    ...kanbanMock.recentlyCompleted,
-  ];
-
-  const taskMap = Object.fromEntries(allTasks.map((t) => [t.id, t]));
+    for (const key of Object.keys(cols) as ColumnKey[]) {
+      const tasks = mapped[key];
+      cols[key] = tasks.map((t) => t.id);
+      allTasks.push(...tasks);
+    }
+    setColumns(cols);
+    setTaskMap(Object.fromEntries(allTasks.map((t) => [t.id, t])));
+  }, [data]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id || !columns) return;
 
     setColumns((prev) => {
+      if (!prev) return prev;
       const updated = { ...prev };
       for (const key of Object.keys(updated) as ColumnKey[]) {
         const col = updated[key];
@@ -80,26 +116,32 @@ export function KanbanBoard() {
   }
 
   return (
-    <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {columnConfig.map(({ key, title, highlight }) => (
-          <KanbanColumn
-            key={key}
-            id={key}
-            title={title}
-            count={columns[key].length}
-            highlight={highlight}
-            itemIds={columns[key]}
-          >
-            {columns[key].map((taskId) => {
-              const task = taskMap[taskId];
-              if (!task) return null;
-              const props = getTaskProps(task as Record<string, unknown>, key);
-              return <TaskCard key={taskId} {...props} />;
-            })}
-          </KanbanColumn>
-        ))}
-      </div>
-    </DndContext>
+    <LoadingPanel loading={loading} error={error} onRetry={refresh}>
+      {!columns ? (
+        <EmptyState message="No tasks found" />
+      ) : (
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {columnConfig.map(({ key, title, highlight }) => (
+              <KanbanColumn
+                key={key}
+                id={key}
+                title={title}
+                count={columns[key].length}
+                highlight={highlight}
+                itemIds={columns[key]}
+              >
+                {columns[key].map((taskId) => {
+                  const task = taskMap[taskId];
+                  if (!task) return null;
+                  const props = getTaskProps(task, key);
+                  return <TaskCard key={taskId} {...props} />;
+                })}
+              </KanbanColumn>
+            ))}
+          </div>
+        </DndContext>
+      )}
+    </LoadingPanel>
   );
 }

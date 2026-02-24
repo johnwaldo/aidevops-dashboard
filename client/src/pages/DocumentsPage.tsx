@@ -1,12 +1,50 @@
-import { useState } from "react";
-import { documentsMock } from "@/lib/mock-data";
+import { useState, useEffect, useCallback } from "react";
+import { useApiData } from "@/hooks/useApiData";
 import { FileTree } from "@/components/documents/FileTree";
 import { MarkdownViewer } from "@/components/documents/MarkdownViewer";
 import { SearchBar } from "@/components/documents/SearchBar";
+import { LoadingPanel } from "@/components/shared/LoadingPanel";
+import { API_BASE } from "@/lib/config";
+
+interface TreeNode {
+  type: "dir" | "file";
+  name: string;
+  children?: TreeNode[];
+  size?: string;
+  modified?: string;
+}
 
 export function DocumentsPage() {
+  const { data: tree, loading, error, refresh } = useApiData<TreeNode[]>("documents/tree");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [content, setContent] = useState<string | null>(null);
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const fetchContent = useCallback(async (path: string) => {
+    setContentLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/documents/content?path=${encodeURIComponent(path)}`);
+      if (res.ok) {
+        const json = await res.json();
+        setContent(json.data?.content ?? null);
+      } else {
+        setContent(null);
+      }
+    } catch {
+      setContent(null);
+    } finally {
+      setContentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedFile) {
+      fetchContent(selectedFile);
+    } else {
+      setContent(null);
+    }
+  }, [selectedFile, fetchContent]);
 
   return (
     <div className="flex h-full">
@@ -16,11 +54,30 @@ export function DocumentsPage() {
           <SearchBar value={search} onChange={setSearch} />
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          <FileTree tree={documentsMock.tree} onSelect={setSelectedFile} />
+          <LoadingPanel loading={loading} error={error} onRetry={refresh}>
+            {tree ? (
+              <FileTree tree={tree} onSelect={setSelectedFile} />
+            ) : (
+              <p className="text-xs text-[#71717a] p-2">No documents found</p>
+            )}
+          </LoadingPanel>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <MarkdownViewer fileName={selectedFile} />
+        {contentLoading ? (
+          <div className="flex items-center justify-center h-full text-[#71717a] text-sm">Loading...</div>
+        ) : content ? (
+          <div className="p-6">
+            <h2 className="text-lg font-semibold font-[JetBrains_Mono] text-[#e4e4e7] mb-4">{selectedFile}</h2>
+            <div className="prose prose-invert prose-sm max-w-none">
+              <div className="rounded bg-[#0a0a0f] p-4 text-xs font-mono text-[#71717a] leading-relaxed whitespace-pre-wrap">
+                {content}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <MarkdownViewer fileName={selectedFile} />
+        )}
       </div>
     </div>
   );
