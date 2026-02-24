@@ -25,6 +25,35 @@ export const config = {
   enableVPS: process.env.ENABLE_VPS !== "false",
   enableGit: process.env.ENABLE_GIT !== "false",
   enableUptime: process.env.ENABLE_UPTIME !== "false",
+  enablePagespeed: process.env.ENABLE_PAGESPEED !== "false",
+
+  // Alert thresholds
+  thresholds: {
+    tokenBudget: {
+      monthlyCap: Number(process.env.DASHBOARD_TOKEN_BUDGET ?? 400),
+      dailyWarn: Number(process.env.DASHBOARD_TOKEN_DAILY_WARN ?? 25),
+      monthlyWarnPct: 75,
+      monthlyAlertPct: 90,
+    },
+    health: {
+      cpuWarn: 80,
+      ramWarn: 85,
+      diskWarn: 90,
+    },
+    ssl: {
+      expiryWarnDays: 14,
+      expiryAlertDays: 7,
+    },
+    tasks: {
+      overdueAfterDays: 7,
+    },
+    branches: {
+      staleDays: 30,
+    },
+  },
+
+  // PageSpeed
+  pagespeedUrls: (process.env.PAGESPEED_URLS ?? "").split(",").filter(Boolean),
 
   // Secrets (loaded at startup)
   githubToken: null as string | null,
