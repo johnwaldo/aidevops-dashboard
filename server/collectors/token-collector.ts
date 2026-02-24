@@ -13,6 +13,33 @@ export interface TokenEntry {
   projectPath: string;
 }
 
+export interface BudgetStatus {
+  monthlyCap: number;
+  currentMonth: number;
+  today: number;
+  thisWeek: number;
+  dailyHistory: number[];
+  usedPct: number;
+  projectedMonthEnd: number;
+  projectedPct: number;
+  dailyAvg: number;
+  dailyBurnRate: number;
+  daysRemaining: number;
+  status: "ok" | "warn" | "alert" | "critical" | "exceeded";
+}
+
+export interface SessionCost {
+  sessionFile: string;
+  project: string;
+  cost: number;
+  requests: number;
+  inputTokens: number;
+  outputTokens: number;
+  firstMessage: string;
+  lastMessage: string;
+  models: string[];
+}
+
 export interface TokenSummary {
   budget: {
     today: number;
@@ -20,6 +47,7 @@ export interface TokenSummary {
     currentMonth: number;
     dailyHistory: number[];
   };
+  budgetStatus: BudgetStatus;
   byModel: {
     model: string;
     tokens: number;
@@ -232,6 +260,46 @@ export async function collectTokenSummary(): Promise<TokenSummary> {
     }))
     .sort((a, b) => b.cost - a.cost);
 
+  // Budget status computation
+  const { monthlyCap, dailyWarn, monthlyWarnPct, monthlyAlertPct } = config.thresholds.tokenBudget;
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysRemaining = daysInMonth - dayOfMonth;
+  const dailyAvg = dayOfMonth > 0 ? totalCost / dayOfMonth : 0;
+  const projectedMonthEnd = totalCost + dailyAvg * daysRemaining;
+  const usedPct = monthlyCap > 0 ? (totalCost / monthlyCap) * 100 : 0;
+  const projectedPct = monthlyCap > 0 ? (projectedMonthEnd / monthlyCap) * 100 : 0;
+
+  // Burn rate: weighted average — last 3 days weighted 2x vs older days
+  const recentDays = dailyHistory.slice(-3);
+  const olderDays = dailyHistory.slice(0, -3);
+  const recentAvg = recentDays.length > 0 ? recentDays.reduce((a, b) => a + b, 0) / recentDays.length : 0;
+  const olderAvg = olderDays.length > 0 ? olderDays.reduce((a, b) => a + b, 0) / olderDays.length : 0;
+  const dailyBurnRate = olderDays.length > 0
+    ? (recentAvg * 2 + olderAvg) / 3
+    : recentAvg;
+
+  let budgetStatusLevel: BudgetStatus["status"] = "ok";
+  if (usedPct >= 100) budgetStatusLevel = "exceeded";
+  else if (usedPct >= monthlyAlertPct || todayCost >= dailyWarn * 1.5) budgetStatusLevel = "critical";
+  else if (usedPct >= monthlyWarnPct || todayCost >= dailyWarn) budgetStatusLevel = "warn";
+  else if (projectedPct >= monthlyAlertPct) budgetStatusLevel = "alert";
+
+  const budgetStatus: BudgetStatus = {
+    monthlyCap,
+    currentMonth: Math.round(totalCost * 100) / 100,
+    today: Math.round(todayCost * 100) / 100,
+    thisWeek: Math.round(weekCost * 100) / 100,
+    dailyHistory,
+    usedPct: Math.round(usedPct * 10) / 10,
+    projectedMonthEnd: Math.round(projectedMonthEnd * 100) / 100,
+    projectedPct: Math.round(projectedPct * 10) / 10,
+    dailyAvg: Math.round(dailyAvg * 100) / 100,
+    dailyBurnRate: Math.round(dailyBurnRate * 100) / 100,
+    daysRemaining,
+    status: budgetStatusLevel,
+  };
+
   return {
     budget: {
       today: Math.round(todayCost * 100) / 100,
@@ -239,9 +307,98 @@ export async function collectTokenSummary(): Promise<TokenSummary> {
       currentMonth: Math.round(totalCost * 100) / 100,
       dailyHistory,
     },
+    budgetStatus,
     byModel,
     byProject,
     totalRequests: entries.length,
     totalCost: Math.round(totalCost * 100) / 100,
   };
+}
+
+export async function collectSessionCosts(): Promise<SessionCost[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+
+  const files = await findJsonlFiles(config.claudeLogDir, since);
+  const sessions: SessionCost[] = [];
+
+  for (const filePath of files) {
+    try {
+      const text = await Bun.file(filePath).text();
+      const seen = new Map<string, TokenEntry>();
+      let firstTs = "";
+      let lastTs = "";
+      const models = new Set<string>();
+
+      for (const line of text.split("\n")) {
+        if (!line.trim()) continue;
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type !== "assistant" || !entry.message?.usage) continue;
+
+          const msgId = entry.message.id ?? "";
+          const dedupKey = `${msgId}:${entry.requestId ?? ""}`;
+          const ts = entry.timestamp ?? "";
+
+          if (!firstTs || ts < firstTs) firstTs = ts;
+          if (!lastTs || ts > lastTs) lastTs = ts;
+
+          const model = entry.message.model ?? "unknown";
+          models.add(model.includes("opus") ? "Opus" :
+            model.includes("sonnet") ? "Sonnet" :
+            model.includes("haiku") ? "Haiku" : model);
+
+          const parsed: TokenEntry = {
+            model,
+            inputTokens: entry.message.usage.input_tokens ?? 0,
+            outputTokens: entry.message.usage.output_tokens ?? 0,
+            cacheReadTokens: entry.message.usage.cache_read_input_tokens ?? 0,
+            cacheCreateTokens: entry.message.usage.cache_creation_input_tokens ?? 0,
+            timestamp: ts,
+            messageId: msgId,
+            projectPath: filePath,
+          };
+
+          const existing = seen.get(dedupKey);
+          const totalNew = parsed.inputTokens + parsed.outputTokens;
+          const totalExisting = existing ? existing.inputTokens + existing.outputTokens : 0;
+          if (!existing || totalNew > totalExisting) {
+            seen.set(dedupKey, parsed);
+          }
+        } catch {
+          // Skip malformed lines
+        }
+      }
+
+      if (seen.size === 0) continue;
+
+      const entries = [...seen.values()];
+      let totalCost = 0;
+      let totalInput = 0;
+      let totalOutput = 0;
+
+      for (const e of entries) {
+        totalCost += calculateCost(e);
+        totalInput += e.inputTokens;
+        totalOutput += e.outputTokens;
+      }
+
+      sessions.push({
+        sessionFile: basename(filePath),
+        project: projectFromPath(filePath),
+        cost: Math.round(totalCost * 100) / 100,
+        requests: entries.length,
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        firstMessage: firstTs,
+        lastMessage: lastTs,
+        models: [...models],
+      });
+    } catch {
+      // Skip unreadable files
+    }
+  }
+
+  // Sort by cost descending
+  return sessions.sort((a, b) => b.cost - a.cost);
 }
