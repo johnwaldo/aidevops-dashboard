@@ -4,6 +4,12 @@ import { handleAgents } from "./routes/agents";
 import { handleStatus } from "./routes/status";
 import { handleDocumentsTree, handleDocumentsContent } from "./routes/documents";
 import { handleSettings } from "./routes/settings";
+import { handleHealth, handleHealthLocal, handleHealthVPS } from "./routes/health";
+import { handleOllama } from "./routes/ollama";
+import { handleProjects } from "./routes/projects";
+import { handleTokens, handleTokenModels, handleTokenProjects } from "./routes/tokens";
+import { handleUptime } from "./routes/uptime";
+import { handleNeeds } from "./routes/needs";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
 import { apiError } from "./routes/_helpers";
@@ -15,12 +21,24 @@ await loadSecrets();
 startFileWatchers();
 
 const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
+  // Session A — filesystem parsers
   "/api/tasks": handleTasks,
   "/api/agents": handleAgents,
   "/api/status": handleStatus,
   "/api/documents/tree": handleDocumentsTree,
   "/api/documents/content": handleDocumentsContent,
   "/api/settings": handleSettings,
+  // Session B — external collectors
+  "/api/health": handleHealth,
+  "/api/health/local": handleHealthLocal,
+  "/api/health/vps": handleHealthVPS,
+  "/api/ollama": handleOllama,
+  "/api/projects": handleProjects,
+  "/api/tokens": handleTokens,
+  "/api/tokens/models": handleTokenModels,
+  "/api/tokens/projects": handleTokenProjects,
+  "/api/uptime": handleUptime,
+  "/api/needs": handleNeeds,
 };
 
 const server = Bun.serve({
@@ -118,7 +136,9 @@ console.log(`
   -------------------------
   HTTP:      http://localhost:${server.port}
   WebSocket: ws://localhost:${server.port}/ws
+  Routes:    ${Object.keys(ROUTES).length} endpoints + /api/health/ping
   GitHub:    ${config.githubToken ? "configured" : "not configured"}
   VPS:       ${config.enableVPS && config.vpsHost ? config.vpsHost : "disabled"}
   Ollama:    ${config.ollamaHost}
+  Uptime:    ${config.updownApiKey ? "configured" : "not configured"}
 `);
