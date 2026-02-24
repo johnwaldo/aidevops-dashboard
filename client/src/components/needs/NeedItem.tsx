@@ -1,4 +1,4 @@
-import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock } from "lucide-react";
+import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX } from "lucide-react";
 import { PriorityDot } from "@/components/shared/PriorityDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ const typeIcons: Record<string, React.ReactNode> = {
   failure: <XCircle className="h-4 w-4" />,
   agent: <Bot className="h-4 w-4" />,
   overdue: <CalendarClock className="h-4 w-4" />,
+  budget: <DollarSign className="h-4 w-4" />,
+  ssl: <Lock className="h-4 w-4" />,
+  config: <Settings className="h-4 w-4" />,
+  "ci-failure": <CircleX className="h-4 w-4" />,
 };
 
 const typeLabels: Record<string, string> = {
@@ -21,6 +25,10 @@ const typeLabels: Record<string, string> = {
   failure: "Failure",
   agent: "Agent",
   overdue: "Overdue",
+  budget: "Budget",
+  ssl: "SSL",
+  config: "Config",
+  "ci-failure": "CI Failure",
 };
 
 interface NeedItemProps {

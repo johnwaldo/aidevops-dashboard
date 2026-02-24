@@ -1,4 +1,4 @@
-import { AlertTriangle, GitPullRequest, ShieldAlert, Clock, XCircle, Bot, CalendarClock, Settings } from "lucide-react";
+import { AlertTriangle, GitPullRequest, ShieldAlert, Clock, XCircle, Bot, CalendarClock, Settings, DollarSign, Lock, CircleX } from "lucide-react";
 import { useApiData } from "@/hooks/useApiData";
 import { PriorityDot } from "@/components/shared/PriorityDot";
 import { LoadingPanel } from "@/components/shared/LoadingPanel";
@@ -12,6 +12,9 @@ const typeIcons: Record<string, React.ReactNode> = {
   agent: <Bot className="h-3.5 w-3.5" />,
   overdue: <CalendarClock className="h-3.5 w-3.5" />,
   config: <Settings className="h-3.5 w-3.5" />,
+  budget: <DollarSign className="h-3.5 w-3.5" />,
+  ssl: <Lock className="h-3.5 w-3.5" />,
+  "ci-failure": <CircleX className="h-3.5 w-3.5" />,
 };
 
 interface NeedItem {

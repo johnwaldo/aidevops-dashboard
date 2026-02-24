@@ -3,6 +3,7 @@ import { DailySpendChart } from "@/components/tokens/DailySpendChart";
 import { ModelBreakdown } from "@/components/tokens/ModelBreakdown";
 import { ModelPerformance } from "@/components/tokens/ModelPerformance";
 import { LocalVsApiSplit } from "@/components/tokens/LocalVsApiSplit";
+import { SessionCosts } from "@/components/tokens/SessionCosts";
 
 export function TokensPage() {
   return (
@@ -19,11 +20,12 @@ export function TokensPage() {
         <ModelBreakdown />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-2 gap-4">
+        <SessionCosts />
+        <div className="space-y-4">
           <ModelPerformance />
+          <LocalVsApiSplit />
         </div>
-        <LocalVsApiSplit />
       </div>
     </div>
   );
