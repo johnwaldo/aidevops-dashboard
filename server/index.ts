@@ -7,7 +7,7 @@ import { handleSettings } from "./routes/settings";
 import { handleHealth, handleHealthLocal, handleHealthVPS } from "./routes/health";
 import { handleOllama } from "./routes/ollama";
 import { handleProjects } from "./routes/projects";
-import { handleTokens, handleTokenModels, handleTokenProjects } from "./routes/tokens";
+import { handleTokens, handleTokenModels, handleTokenProjects, handleTokenBudget, handleTokenSessions } from "./routes/tokens";
 import { handleUptime } from "./routes/uptime";
 import { handleNeeds } from "./routes/needs";
 import { handleSSL } from "./routes/ssl";
@@ -39,6 +39,8 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/tokens": handleTokens,
   "/api/tokens/models": handleTokenModels,
   "/api/tokens/projects": handleTokenProjects,
+  "/api/tokens/budget": handleTokenBudget,
+  "/api/tokens/sessions": handleTokenSessions,
   "/api/uptime": handleUptime,
   "/api/needs": handleNeeds,
   // Phase 3 — intelligence & integrations
