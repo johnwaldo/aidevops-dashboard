@@ -10,6 +10,8 @@ import { handleProjects } from "./routes/projects";
 import { handleTokens, handleTokenModels, handleTokenProjects } from "./routes/tokens";
 import { handleUptime } from "./routes/uptime";
 import { handleNeeds } from "./routes/needs";
+import { handleSSL } from "./routes/ssl";
+import { handleAlerts } from "./routes/alerts";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
 import { apiError } from "./routes/_helpers";
@@ -39,6 +41,9 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/tokens/projects": handleTokenProjects,
   "/api/uptime": handleUptime,
   "/api/needs": handleNeeds,
+  // Phase 3 — intelligence & integrations
+  "/api/ssl": handleSSL,
+  "/api/alerts": handleAlerts,
 };
 
 const server = Bun.serve({

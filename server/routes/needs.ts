@@ -1,9 +1,10 @@
 import { cacheGet, cacheSet } from "../cache/store";
+import { config } from "../config";
 import { apiResponse, apiError } from "./_helpers";
 
 export interface NeedItem {
   id: string;
-  type: "approval" | "review" | "failure" | "security" | "overdue" | "config";
+  type: "approval" | "review" | "failure" | "security" | "overdue" | "config" | "budget" | "ssl" | "expiring";
   title: string;
   description: string;
   source: string;
@@ -23,11 +24,12 @@ export async function handleNeeds(_req: Request): Promise<Response> {
   try {
     const needs: NeedItem[] = [];
     let needId = 0;
+    const t = config.thresholds;
 
-    // Pull from cached tasks — items in "In Review" or pending approval
+    // --- Tasks: items in review ---
     const tasksCache = cacheGet<{
       ready: { title: string; id: string; priority: string }[];
-      inProgress: { title: string; id: string; priority: string }[];
+      inProgress: { title: string; id: string; priority: string; started?: string }[];
       inReview: { title: string; id: string; priority: string }[];
       backlog: { title: string; id: string; priority: string }[];
     }>("tasks");
@@ -47,9 +49,32 @@ export async function handleNeeds(_req: Request): Promise<Response> {
           });
         }
       }
+
+      // --- Tasks: overdue (in progress > N days) ---
+      if (tasks.inProgress) {
+        const now = Date.now();
+        for (const task of tasks.inProgress) {
+          if (task.started) {
+            const startedAt = new Date(task.started).getTime();
+            const daysElapsed = (now - startedAt) / (1000 * 60 * 60 * 24);
+            if (daysElapsed > t.tasks.overdueAfterDays) {
+              needs.push({
+                id: `need-${++needId}`,
+                type: "overdue",
+                title: `Overdue: ${task.title}`,
+                description: `Task ${task.id} has been in progress for ${Math.floor(daysElapsed)} days`,
+                source: "TODO.md",
+                priority: daysElapsed > t.tasks.overdueAfterDays * 2 ? "high" : "medium",
+                url: null,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          }
+        }
+      }
     }
 
-    // Pull from cached projects — failing CI, open PRs needing review
+    // --- Projects: failing CI, open PRs ---
     const projectsCache = cacheGet<{
       name: string;
       ci: string;
@@ -85,7 +110,87 @@ export async function handleNeeds(_req: Request): Promise<Response> {
       }
     }
 
-    // Pull from cached health — critical system status
+    // --- Token budget alerts ---
+    const tokensCache = cacheGet<{
+      budget: { today: number; currentMonth: number };
+    }>("tokens");
+    if (tokensCache) {
+      const { budget } = tokensCache.data;
+      const monthPct = (budget.currentMonth / t.tokenBudget.monthlyCap) * 100;
+
+      if (monthPct >= 100) {
+        needs.push({
+          id: `need-${++needId}`,
+          type: "budget",
+          title: "Token budget exceeded",
+          description: `$${budget.currentMonth.toFixed(0)} of $${t.tokenBudget.monthlyCap} monthly cap (${Math.round(monthPct)}%)`,
+          source: "Token Tracker",
+          priority: "critical",
+          url: null,
+          createdAt: new Date().toISOString(),
+        });
+      } else if (monthPct >= t.tokenBudget.monthlyAlertPct) {
+        needs.push({
+          id: `need-${++needId}`,
+          type: "budget",
+          title: `Token budget at ${Math.round(monthPct)}%`,
+          description: `$${budget.currentMonth.toFixed(0)} of $${t.tokenBudget.monthlyCap} monthly cap`,
+          source: "Token Tracker",
+          priority: "high",
+          url: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      if (budget.today > t.tokenBudget.dailyWarn) {
+        needs.push({
+          id: `need-${++needId}`,
+          type: "budget",
+          title: `High daily spend: $${budget.today.toFixed(2)}`,
+          description: `Daily spend exceeds $${t.tokenBudget.dailyWarn} warning threshold`,
+          source: "Token Tracker",
+          priority: "medium",
+          url: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    // --- SSL certificate expiry ---
+    const sslCache = cacheGet<{
+      domain: string;
+      daysRemaining: number | null;
+      status: string;
+    }[]>("ssl");
+    if (sslCache) {
+      for (const cert of sslCache.data) {
+        if (cert.status === "expired") {
+          needs.push({
+            id: `need-${++needId}`,
+            type: "ssl",
+            title: `SSL expired: ${cert.domain}`,
+            description: "Certificate has expired — site is insecure",
+            source: "SSL Monitor",
+            priority: "critical",
+            url: null,
+            createdAt: new Date().toISOString(),
+          });
+        } else if (cert.status === "critical" || cert.status === "expiring") {
+          needs.push({
+            id: `need-${++needId}`,
+            type: "expiring",
+            title: `SSL cert: ${cert.domain} — ${cert.daysRemaining}d`,
+            description: `Certificate expires in ${cert.daysRemaining} days`,
+            source: "SSL Monitor",
+            priority: cert.status === "critical" ? "high" : "medium",
+            url: null,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    // --- Health: critical system status ---
     const healthCache = cacheGet<{
       status: string;
       cpu: { combined: number };
@@ -108,11 +213,8 @@ export async function handleNeeds(_req: Request): Promise<Response> {
       }
     }
 
-    // Pull from cached VPS health
-    const vpsCache = cacheGet<{
-      status: string;
-      hostname: string;
-    }>("healthVPS");
+    // --- VPS health ---
+    const vpsCache = cacheGet<{ status: string; hostname: string }>("healthVPS");
     if (vpsCache && vpsCache.data) {
       const vps = vpsCache.data;
       if (vps.status === "critical" || vps.status === "unreachable") {
@@ -129,7 +231,7 @@ export async function handleNeeds(_req: Request): Promise<Response> {
       }
     }
 
-    // Pull from cached Ollama — stopped or error
+    // --- Ollama stopped ---
     const ollamaCache = cacheGet<{ status: string }>("ollama");
     if (ollamaCache && ollamaCache.data.status !== "running") {
       needs.push({
@@ -147,9 +249,7 @@ export async function handleNeeds(_req: Request): Promise<Response> {
     // Sort by priority
     needs.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
 
-    // Cache the aggregated needs briefly (recomputed on demand)
     cacheSet("needs", needs, 10);
-
     return apiResponse(needs, "aggregator", 10);
   } catch (err) {
     return apiError("AGGREGATION_ERROR", String(err), "needs");
