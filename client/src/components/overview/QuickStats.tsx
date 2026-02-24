@@ -1,33 +1,21 @@
-import { GitCommitHorizontal, Users, GitPullRequest, CircleDot } from "lucide-react";
+import { GitCommitHorizontal, GitPullRequest, CircleDot, Bot } from "lucide-react";
 import { MetricCard } from "@/components/shared/MetricCard";
+import { useApiData } from "@/hooks/useApiData";
 
 export function QuickStats() {
+  const { data: projects } = useApiData<{ prs: number; issues: number }[]>("projects", 300);
+  const { data: agents } = useApiData<{ totalSubagents: number }>("agents", 300);
+
+  const totalPRs = (projects ?? []).reduce((sum, p) => sum + p.prs, 0);
+  const totalIssues = (projects ?? []).reduce((sum, p) => sum + p.issues, 0);
+  const repoCount = projects?.length ?? 0;
+
   return (
     <div className="grid grid-cols-4 gap-4">
-      <MetricCard
-        label="Commits Today"
-        value="14"
-        sparkData={[8, 12, 6, 14, 9, 11, 14]}
-        icon={<GitCommitHorizontal className="h-4 w-4" />}
-      />
-      <MetricCard
-        label="Active Sessions"
-        value="2"
-        trend="@code, @seo"
-        icon={<Users className="h-4 w-4" />}
-      />
-      <MetricCard
-        label="Open PRs"
-        value="3"
-        trend="across 2 repos"
-        icon={<GitPullRequest className="h-4 w-4" />}
-      />
-      <MetricCard
-        label="Open Issues"
-        value="8"
-        trend="across 4 repos"
-        icon={<CircleDot className="h-4 w-4" />}
-      />
+      <MetricCard label="Repositories" value={String(repoCount)} icon={<GitCommitHorizontal className="h-4 w-4" />} />
+      <MetricCard label="Agents" value={String(agents?.totalSubagents ?? 0)} trend="subagents" icon={<Bot className="h-4 w-4" />} />
+      <MetricCard label="Open PRs" value={String(totalPRs)} trend={`across ${repoCount} repos`} icon={<GitPullRequest className="h-4 w-4" />} />
+      <MetricCard label="Open Issues" value={String(totalIssues)} trend={`across ${repoCount} repos`} icon={<CircleDot className="h-4 w-4" />} />
     </div>
   );
 }

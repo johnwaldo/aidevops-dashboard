@@ -1,43 +1,46 @@
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { systemMock, tokensMock, needsMock } from "@/lib/mock-data";
+import { useApiData } from "@/hooks/useApiData";
 
 export function TopBar() {
-  const budgetPct = Math.round((tokensMock.budget.currentMonth / tokensMock.budget.monthlyCap) * 100);
+  const { data: health } = useApiData<{ local: { status: string } | null; vps: { status: string } | null }>("health", 15);
+  const { data: tokens } = useApiData<{ budget: { today: number; currentMonth: number } }>("tokens", 300);
+  const { data: needs } = useApiData<unknown[]>("needs", 10);
+  const { data: ollama } = useApiData<{ status: string; loaded: unknown[]; inference: { tokensPerSec: number | null } }>("ollama", 10);
+
+  const localStatus = health?.local?.status ?? "unknown";
+  const vpsStatus = health?.vps?.status ?? "unknown";
+  const ollamaStatus = ollama?.status ?? "unknown";
+  const loadedCount = ollama?.loaded?.length ?? 0;
+  const tps = ollama?.inference?.tokensPerSec;
+  const monthSpend = tokens?.budget?.currentMonth ?? 0;
+  const needsCount = needs?.length ?? 0;
 
   return (
     <header className="h-12 shrink-0 border-b border-[#1e1e2e] bg-[#111118] px-4 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <StatusBadge status={systemMock.vps.status} label="VPS" />
-          <StatusBadge status={systemMock.local.status} label="Local" />
-          <StatusBadge status={systemMock.tailscale.status} label="Tailscale" />
+          <StatusBadge status={vpsStatus} label="VPS" />
+          <StatusBadge status={localStatus} label="Local" />
         </div>
         <div className="h-4 w-px bg-[#1e1e2e]" />
         <span className="text-xs text-[#71717a] font-mono">
-          Ollama: 2 models loaded &middot; 42.8 t/s
+          Ollama: {ollamaStatus === "running" ? `${loadedCount} model${loadedCount !== 1 ? "s" : ""} loaded` : ollamaStatus}
+          {tps ? ` \u00b7 ${tps} t/s` : ""}
         </span>
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#71717a] font-mono">
-            ${tokensMock.budget.currentMonth} / ${tokensMock.budget.monthlyCap}
+            ${monthSpend.toFixed(0)} this month
           </span>
-          <div className="h-1.5 w-24 rounded-full bg-[#1e1e2e] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-cyan-500 transition-all"
-              style={{ width: `${budgetPct}%` }}
-            />
-          </div>
         </div>
         <div className="h-4 w-px bg-[#1e1e2e]" />
         <div className="flex items-center gap-1.5">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-[10px] font-bold text-rose-400">
-            {needsMock.length}
+            {needsCount}
           </span>
           <span className="text-xs text-[#71717a]">needs</span>
         </div>
-        <div className="h-4 w-px bg-[#1e1e2e]" />
-        <span className="text-xs text-[#71717a] font-mono">2 active</span>
       </div>
     </header>
   );

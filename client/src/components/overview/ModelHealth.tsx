@@ -1,42 +1,38 @@
-import { tokensMock } from "@/lib/mock-data";
+import { useApiData } from "@/hooks/useApiData";
 import { cn } from "@/lib/utils";
+import { LoadingPanel } from "@/components/shared/LoadingPanel";
 
 export function ModelHealth() {
-  return (
-    <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4">
-      <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a] mb-3">Model Health</h3>
-      <div className="space-y-2.5">
-        {tokensMock.modelPerformance.map((m) => {
-          const successColor =
-            m.success >= 99.5 ? "text-emerald-400" : m.success >= 98 ? "text-amber-400" : "text-rose-400";
-          const latencyColor =
-            m.avgLatency < 500 ? "text-emerald-400" : m.avgLatency < 2000 ? "text-cyan-400" : "text-amber-400";
+  const { data: tokens, loading, error, refresh } = useApiData<{
+    byModel: { model: string; requests: number; cost: number }[];
+    totalRequests: number;
+  }>("tokens", 300);
 
-          return (
-            <div key={m.model} className="flex items-center gap-3">
-              <span className="text-xs font-mono text-[#e4e4e7] w-36 truncate">{m.model}</span>
-              <div className="flex-1 flex items-center gap-3">
-                <span className={cn("text-xs font-mono font-semibold", successColor)}>
-                  {m.success}%
-                </span>
-                <div className="flex-1 h-1 rounded-full bg-[#1e1e2e] overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-1000", {
-                      "bg-emerald-500": m.success >= 99.5,
-                      "bg-amber-500": m.success >= 98 && m.success < 99.5,
-                      "bg-rose-500": m.success < 98,
-                    })}
-                    style={{ width: `${m.success}%` }}
-                  />
+  return (
+    <LoadingPanel loading={loading} error={error} onRetry={refresh}>
+      <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a] mb-3">Model Usage</h3>
+        <div className="space-y-2.5">
+          {(tokens?.byModel ?? []).map((m) => {
+            const pct = tokens?.totalRequests ? Math.round((m.requests / tokens.totalRequests) * 100) : 0;
+            return (
+              <div key={m.model} className="flex items-center gap-3">
+                <span className="text-xs font-mono text-[#e4e4e7] w-20 truncate">{m.model}</span>
+                <div className="flex-1 flex items-center gap-3">
+                  <span className={cn("text-xs font-mono font-semibold", "text-cyan-400")}>{m.requests}</span>
+                  <div className="flex-1 h-1 rounded-full bg-[#1e1e2e] overflow-hidden">
+                    <div className="h-full rounded-full bg-cyan-500 transition-all duration-1000" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-[10px] font-mono text-[#71717a]">${m.cost.toFixed(0)}</span>
                 </div>
-                <span className={cn("text-[10px] font-mono", latencyColor)}>
-                  {m.avgLatency}ms
-                </span>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+          {(!tokens?.byModel || tokens.byModel.length === 0) && (
+            <p className="text-xs text-[#71717a] text-center py-2">No model data</p>
+          )}
+        </div>
       </div>
-    </div>
+    </LoadingPanel>
   );
 }
