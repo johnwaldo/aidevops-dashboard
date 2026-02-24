@@ -19,6 +19,8 @@ export const CACHE_TTL: Record<string, number> = {
   documents: 30,
   settings: 600,
   ssl: 3600,
+  ci: 120,
+  pagespeed: 86400, // 24 hours
 };
 
 export function cacheGet<T>(key: string): { data: T; cached: boolean; timestamp: string; ttl: number } | null {

@@ -4,7 +4,7 @@ import { apiResponse, apiError } from "./_helpers";
 
 export interface NeedItem {
   id: string;
-  type: "approval" | "review" | "failure" | "security" | "overdue" | "config" | "budget" | "ssl" | "expiring";
+  type: "approval" | "review" | "failure" | "security" | "overdue" | "config" | "budget" | "ssl" | "expiring" | "ci-failure";
   title: string;
   description: string;
   source: string;
@@ -187,6 +187,25 @@ export async function handleNeeds(_req: Request): Promise<Response> {
             createdAt: new Date().toISOString(),
           });
         }
+      }
+    }
+
+    // --- CI failures from Actions collector ---
+    const ciCache = cacheGet<{
+      recentFailures: { repo: string; name: string; branch: string; url: string; actor: string }[];
+    }>("ci");
+    if (ciCache && ciCache.data.recentFailures.length > 0) {
+      for (const failure of ciCache.data.recentFailures.slice(0, 5)) {
+        needs.push({
+          id: `need-${++needId}`,
+          type: "ci-failure",
+          title: `CI failed: ${failure.repo}/${failure.name}`,
+          description: `Workflow "${failure.name}" failed on ${failure.branch} (by ${failure.actor})`,
+          source: "GitHub Actions",
+          priority: "high",
+          url: failure.url,
+          createdAt: new Date().toISOString(),
+        });
       }
     }
 
