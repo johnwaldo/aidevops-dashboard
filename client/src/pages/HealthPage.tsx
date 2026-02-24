@@ -5,6 +5,7 @@ import { UptimeMonitors } from "@/components/health/UptimeMonitors";
 import { NetworkPanel } from "@/components/health/NetworkPanel";
 import { CICDStatus } from "@/components/health/CICDStatus";
 import { SecurityPosture } from "@/components/health/SecurityPosture";
+import { SSLPanel } from "@/components/health/SSLPanel";
 
 export function HealthPage() {
   return (
@@ -26,10 +27,15 @@ export function HealthPage() {
         </div>
       </div>
 
-      {/* Bottom: full-width panels */}
-      <div className="grid grid-cols-3 gap-4">
-        <NetworkPanel />
+      {/* Middle: SSL + CI */}
+      <div className="grid grid-cols-2 gap-4">
+        <SSLPanel />
         <CICDStatus />
+      </div>
+
+      {/* Bottom: full-width panels */}
+      <div className="grid grid-cols-2 gap-4">
+        <NetworkPanel />
         <SecurityPosture />
       </div>
     </div>

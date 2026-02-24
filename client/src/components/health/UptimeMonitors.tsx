@@ -6,10 +6,11 @@ interface UptimeEntry {
   name: string;
   url: string;
   status: string;
-  uptime7d: number;
-  uptime30d: number;
-  responseTime: number;
-  lastCheckAt: string;
+  uptime7d: number | null;
+  uptime30d: number | null;
+  responseTime: number | null;
+  responseTime7dAvg: number | null;
+  lastCheckAt: string | null;
 }
 
 export function UptimeMonitors() {
@@ -29,11 +30,24 @@ export function UptimeMonitors() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-mono text-[#e4e4e7] truncate">{monitor.name}</p>
                   <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-[10px] font-mono text-emerald-400">{monitor.uptime7d}% 7d</span>
-                    <span className="text-[10px] font-mono text-[#71717a]">{monitor.uptime30d}% 30d</span>
+                    {monitor.uptime7d != null && (
+                      <span className={`text-[10px] font-mono ${monitor.uptime7d >= 99.9 ? "text-emerald-400" : monitor.uptime7d >= 99 ? "text-amber-400" : "text-rose-400"}`}>
+                        {monitor.uptime7d}% 7d
+                      </span>
+                    )}
+                    {monitor.uptime30d != null && (
+                      <span className="text-[10px] font-mono text-[#71717a]">{monitor.uptime30d}% 30d</span>
+                    )}
                   </div>
                 </div>
-                <span className="text-xs font-mono text-[#71717a] w-14 text-right">{monitor.responseTime}ms</span>
+                <div className="text-right shrink-0">
+                  {monitor.responseTime != null && (
+                    <span className="text-xs font-mono text-[#e4e4e7] block">{monitor.responseTime}ms</span>
+                  )}
+                  {monitor.responseTime7dAvg != null && (
+                    <span className="text-[10px] font-mono text-[#71717a] block">avg {monitor.responseTime7dAvg}ms</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

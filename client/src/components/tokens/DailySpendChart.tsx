@@ -9,6 +9,12 @@ interface TokensData {
     currentMonth: number;
     dailyHistory: number[];
   };
+  budgetStatus: {
+    dailyAvg: number;
+    dailyBurnRate: number;
+    monthlyCap: number;
+    status: string;
+  };
 }
 
 export function DailySpendChart() {
@@ -18,19 +24,26 @@ export function DailySpendChart() {
     return <LoadingPanel loading={loading} error={error} onRetry={refresh}><div /></LoadingPanel>;
   }
 
-  const { budget } = tokens;
+  const { budget, budgetStatus } = tokens;
   const historyLen = budget.dailyHistory.length || 1;
-  const dailyAvg = budget.currentMonth / historyLen;
 
   const data = budget.dailyHistory.map((val, i) => ({
     day: `Day ${i + 1}`,
     spend: val,
   }));
 
+  // Daily budget line = monthly cap / days in month (approx 30)
+  const dailyBudgetLine = budgetStatus.monthlyCap / 30;
+
   return (
     <LoadingPanel loading={loading} error={error} onRetry={refresh}>
       <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a] mb-4">Daily Spend ({historyLen} days)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a]">Daily Spend ({historyLen} days)</h3>
+          <span className="text-[10px] font-mono text-[#71717a]">
+            Burn: ${budgetStatus.dailyBurnRate.toFixed(2)}/day | Avg: ${budgetStatus.dailyAvg.toFixed(2)}/day
+          </span>
+        </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
@@ -42,7 +55,8 @@ export function DailySpendChart() {
               itemStyle={{ color: "#06b6d4" }}
               formatter={(value) => [`$${Number(value).toFixed(2)}`, "Spend"]}
             />
-            <ReferenceLine y={dailyAvg} stroke="#71717a" strokeDasharray="3 3" label={{ value: "Avg", position: "right", fill: "#71717a", fontSize: 10 }} />
+            <ReferenceLine y={budgetStatus.dailyAvg} stroke="#71717a" strokeDasharray="3 3" label={{ value: "Avg", position: "right", fill: "#71717a", fontSize: 10 }} />
+            <ReferenceLine y={dailyBudgetLine} stroke="#f59e0b" strokeDasharray="6 3" label={{ value: "Budget", position: "right", fill: "#f59e0b", fontSize: 10 }} />
             <Bar dataKey="spend" fill="#06b6d4" radius={[2, 2, 0, 0]} opacity={0.8} />
           </BarChart>
         </ResponsiveContainer>
