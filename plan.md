@@ -17,7 +17,7 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 ### Phase 1 — Frontend Mockup & Foundation
 **Goal:** Fully designed, interactive frontend with mock data. Every panel, layout, navigation, and component built and visually polished. No backend. No live data. Pure UI/UX.  
 **Deliverable:** A React SPA you can open in the browser, click through every page, see realistic mock data in every widget, and validate the design before any backend work begins.  
-**Timeline:** 2-3 days with Opus 4.6  
+**Timeline:** 2-4 hours in a single Claude Code session  
 **Details:** See `phase-1.md`
 
 ### Phase 2 — Backend API & Data Layer
@@ -30,17 +30,17 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 - System metrics collectors (macOS local + VPS via SSH)
 - Ollama API integration (`/api/tags`, `/api/ps`, inference metrics)
 - Git platform API polling (GitHub/GitLab/Gitea — user's registered repos)
-- Token usage tracking (Anthropic API usage, local Ollama inference logs)
+- Token usage tracking (JSONL log scanning — approach adapted from [CodexBar](https://github.com/steipete/CodexBar) and [tokscale](https://github.com/junhoyeo/tokscale). Scans `~/.claude/projects/**/*.jsonl` for per-model token counts and calculates cost)
 - WebSocket layer for real-time metric push
 - Filesystem watchers (fsevents) for TODO.md and workspace changes
-**Timeline:** 1-2 weeks with Opus 4.6
+**Timeline:** 2-3 sessions (6-10 hours total) with Opus 4.6
 
 ### Phase 3 — Intelligence & Integrations
 **Goal:** Connect remaining external services, build the aggregated "Needs From Me" engine, and add token/cost analytics with full model performance tracking.  
 **Deliverable:** All Phase 1 panels showing live data. Needs From Me panel aggregating across all sources. Token budget with projections and alerts.  
 **Key work:**
 - "Needs From Me" aggregation engine (PRs, approvals, CI failures, security findings, expiring resources, overdue tasks)
-- Token & cost analytics (Anthropic billing, per-model breakdown, burn rate projection, budget alerts)
+- Token & cost analytics dashboard refinements (budget alerts, burn rate projection, per-project attribution from JSONL file paths)
 - Model success rate tracking (completion/failure/retry per model, latency percentiles)
 - Code quality API integration (CodeFactor, SonarCloud, Codacy, Snyk)
 - updown.io API for uptime monitoring
@@ -48,7 +48,7 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 - CI/CD pipeline status (GitHub Actions API)
 - SSL certificate expiry monitoring
 - Alert threshold system (budget, health, security, staleness)
-**Timeline:** 1-2 weeks with Opus 4.6
+**Timeline:** 2-3 sessions (6-10 hours total) with Opus 4.6
 
 ### Phase 4 — Matrix Communications Hub
 **Goal:** Full Matrix channel integration with real-time message feeds.  
@@ -60,7 +60,7 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 - Message history and real-time sync
 - Agent output stream filtering (agent messages vs human)
 - Unread count tracking
-**Timeline:** 1-2 weeks with Opus 4.6
+**Timeline:** 1-2 sessions (4-8 hours total) with Opus 4.6 — Matrix API is well-documented but auth has edge cases
 
 ### Phase 5 — Write-Back Actions & Polish
 **Goal:** Enable targeted write-back actions from the dashboard. Production hardening.  
@@ -74,7 +74,7 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 - Error handling, retry logic, graceful degradation
 - Performance optimization (lazy loading, virtualized lists)
 - Memory leak testing (72+ hour stability)
-**Timeline:** 1-2 weeks with Opus 4.6
+**Timeline:** 2-3 sessions (6-10 hours total) with Opus 4.6 — write-back requires careful testing
 
 ### Phase 6 — Domain-Specific Panels
 **Goal:** Add specialized panels for SEO, WordPress, and extended git/code quality views.  
@@ -86,7 +86,23 @@ A browser-based operational dashboard plugin for the [aidevops](https://github.c
 - Session replay (browse past agent session logs with timeline)
 - Dashboard as aidevops agent (`@dashboard`) with self-update capability
 - Notification system (desktop notifications, email digests)
-**Timeline:** 2-3 weeks with Opus 4.6
+**Timeline:** 2-4 sessions (8-14 hours total) with Opus 4.6 — multiple external API integrations
+
+---
+
+## Total Project Timeline
+
+| Phase | Effort | Calendar Time (1-2 sessions/day) |
+|-------|--------|----------------------------------|
+| Phase 1 — Frontend Mockup | 2-4 hours | Day 1 |
+| Phase 2 — Backend & Data | 6-10 hours | Days 2-4 |
+| Phase 3 — Intelligence | 6-10 hours | Days 4-6 |
+| Phase 4 — Matrix | 4-8 hours | Days 6-7 |
+| Phase 5 — Write-Back | 6-10 hours | Days 7-9 |
+| Phase 6 — Domain Panels | 8-14 hours | Days 9-12 |
+| **Total** | **32-56 hours** | **~2 weeks at a comfortable pace** |
+
+These assume Opus 4.6 doing the building with human review between sessions. The bottleneck isn't coding speed — it's your review/approval cycles and any debugging of external API integrations that behave differently than documented.
 
 ---
 
