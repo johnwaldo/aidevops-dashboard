@@ -50,7 +50,7 @@ function App() {
             <PageComponent />
           </main>
         </div>
-        <CommandPalette />
+        <CommandPalette onNavigate={(page) => setCurrentPage(page as Page)} />
       </div>
     </TooltipProvider>
   );

@@ -34,7 +34,10 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   return (
     <aside className="w-16 shrink-0 border-r border-[#1e1e2e] bg-[#111118] flex flex-col">
       <div className="flex h-12 items-center justify-center border-b border-[#1e1e2e]">
-        <span className="text-sm font-bold font-mono text-cyan-400">AD</span>
+        <div className="flex flex-col items-center leading-none">
+          <span className="text-[13px] font-bold font-mono text-cyan-400">AI</span>
+          <span className="text-[9px] font-bold font-mono text-[#e4e4e7] -mt-0.5">DevOps</span>
+        </div>
       </div>
       <nav className="flex flex-1 flex-col items-center gap-1 p-2 pt-4">
         {navItems.map(({ page, label, icon: Icon }) => (
