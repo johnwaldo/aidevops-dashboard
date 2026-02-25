@@ -1,0 +1,17 @@
+{
+  "name": "aidevops-dashboard",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"bun run server:dev\" \"bun run client:dev\"",
+    "server:dev": "bun --watch server/index.ts",
+    "client:dev": "cd client && bun run dev --port 5173",
+    "build": "cd client && bun run build",
+    "start": "bun server/index.ts",
+    "server:only": "bun --watch server/index.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
