@@ -15,6 +15,7 @@ export interface DashboardSettings {
   collectors: Record<string, boolean>;
   refreshIntervals: Record<string, number>;
   alerts: Record<string, { enabled: boolean; threshold?: number }>;
+  updateMode: "auto" | "manual";
 }
 
 const defaults: DashboardSettings = {
@@ -55,6 +56,7 @@ const defaults: DashboardSettings = {
     "ssl-expiry-14d": { enabled: true, threshold: 14 },
     "ssl-expiry-7d": { enabled: true, threshold: 7 },
   },
+  updateMode: "auto",
 };
 
 mkdirSync(CONFIG_DIR, { recursive: true });
@@ -105,6 +107,13 @@ export function updateCollector(name: string, enabled: boolean): DashboardSettin
 export function updateRefreshInterval(source: string, intervalSeconds: number): DashboardSettings {
   const settings = loadSettings();
   settings.refreshIntervals[source] = intervalSeconds;
+  saveSettings(settings);
+  return settings;
+}
+
+export function updateUpdateMode(mode: "auto" | "manual"): DashboardSettings {
+  const settings = loadSettings();
+  settings.updateMode = mode;
   saveSettings(settings);
   return settings;
 }

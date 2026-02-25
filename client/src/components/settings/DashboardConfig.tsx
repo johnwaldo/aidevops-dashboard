@@ -7,7 +7,7 @@ import { LoadingPanel } from "@/components/shared/LoadingPanel";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Bell, Radio, Pencil } from "lucide-react";
+import { DollarSign, Bell, Radio, Pencil, RefreshCw } from "lucide-react";
 
 interface DashboardSettings {
   tokenBudget: {
@@ -19,6 +19,7 @@ interface DashboardSettings {
   collectors: Record<string, boolean>;
   refreshIntervals: Record<string, number>;
   alerts: Record<string, { enabled: boolean; threshold?: number }>;
+  updateMode: "auto" | "manual";
 }
 
 const collectorLabels: Record<string, string> = {
@@ -75,6 +76,16 @@ export function DashboardConfig() {
     method: "PUT",
     onSuccess: () => {
       showToast("success", "Alert rule updated");
+      refresh();
+    },
+    onError: (err) => showToast("error", `Failed: ${err}`),
+  });
+
+  const updateModeAction = useAction({
+    endpoint: "/api/actions/settings/update-mode",
+    method: "PUT",
+    onSuccess: () => {
+      showToast("success", "Update mode changed");
       refresh();
     },
     onError: (err) => showToast("error", `Failed: ${err}`),
@@ -144,6 +155,26 @@ export function DashboardConfig() {
                   <Pencil className="h-3 w-3 text-[#3f3f46]" />
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Update Mode */}
+          <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <RefreshCw className="h-4 w-4 text-cyan-400" />
+              <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a]">Dashboard Updates</h3>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs text-[#71717a]">Auto-update</span>
+                <p className="text-[10px] text-[#3f3f46] mt-0.5">Check and apply updates every 12 hours</p>
+              </div>
+              <Switch
+                checked={settings.updateMode === "auto"}
+                onCheckedChange={(checked) => {
+                  updateModeAction.execute({ mode: checked ? "auto" : "manual" });
+                }}
+              />
             </div>
           </div>
 
