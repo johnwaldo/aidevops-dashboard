@@ -1,5 +1,10 @@
+import { readFileSync } from "fs";
+import { join } from "path";
 import { config, loadSecrets } from "./config";
 import { handleTasks } from "./routes/tasks";
+
+// Read dashboard version from root package.json (single source of truth)
+const DASHBOARD_VERSION = JSON.parse(readFileSync(join(import.meta.dir, "../package.json"), "utf-8")).version as string;
 import { handleAgents } from "./routes/agents";
 import { handleStatus } from "./routes/status";
 import { handleDocumentsTree, handleDocumentsContent } from "./routes/documents";
@@ -173,6 +178,7 @@ const server = Bun.serve({
     if (url.pathname === "/api/health/ping") {
       const response = Response.json({
         status: "ok",
+        version: DASHBOARD_VERSION,
         uptime: process.uptime(),
         wsClients: clientCount(),
         timestamp: new Date().toISOString(),
@@ -222,6 +228,7 @@ const server = Bun.serve({
 const authMode = config.dashboardToken ? "token" : config.localhostBypass ? "localhost-only" : "open";
 
 logger.info("AiDevOps Dashboard Server started", {
+  version: DASHBOARD_VERSION,
   http: `http://0.0.0.0:${server.port}`,
   ws: `ws://0.0.0.0:${server.port}/ws`,
   routes: Object.keys(ROUTES).length + 1, // +1 for /api/health/ping
@@ -236,7 +243,7 @@ logger.info("AiDevOps Dashboard Server started", {
 
 // Also print to console for dev visibility
 console.log(`
-  AiDevOps Dashboard Server
+  AiDevOps Dashboard Server v${DASHBOARD_VERSION}
   -------------------------
   HTTP:      http://0.0.0.0:${server.port}
   WebSocket: ws://0.0.0.0:${server.port}/ws

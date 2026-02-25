@@ -2,6 +2,8 @@ import { useApiData } from "@/hooks/useApiData";
 import { Check, ArrowUpCircle } from "lucide-react";
 import { LoadingPanel } from "@/components/shared/LoadingPanel";
 
+const dashboardVersion = __DASHBOARD_VERSION__;
+
 interface SettingsData {
   version: { installed: string; latest: string; updateAvailable: boolean };
   apiKeys: { service: string; configured: boolean; status: string }[];
@@ -45,6 +47,10 @@ export function FrameworkVersion() {
                 <span className="text-xs font-mono text-amber-400">{version.latest}</span>
               </div>
             )}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[#71717a]">Dashboard</span>
+              <span className="text-xs font-mono text-cyan-400">v{dashboardVersion}</span>
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[#71717a]">Repository</span>
               <span className="text-xs font-mono text-[#71717a]">~/Git/aidevops</span>

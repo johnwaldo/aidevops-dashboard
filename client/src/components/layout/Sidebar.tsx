@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import type { Page } from "@/App";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+const dashboardVersion = __DASHBOARD_VERSION__;
+
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
@@ -61,6 +63,9 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </Tooltip>
         ))}
       </nav>
+      <div className="border-t border-[#1e1e2e] p-2 flex items-center justify-center">
+        <span className="text-[9px] font-mono text-[#3f3f46]">v{dashboardVersion}</span>
+      </div>
     </aside>
   );
 }
