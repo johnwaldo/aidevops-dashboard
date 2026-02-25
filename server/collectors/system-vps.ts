@@ -12,6 +12,7 @@ export interface VPSMetrics {
   disk: { used: number; total: number; pct: number };
   sshLatency: number;
   services: { name: string; status: "running" | "stopped" | "idle" }[];
+  pendingUpdates: { total: number; security: number };
 }
 
 export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
@@ -28,7 +29,7 @@ export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
       "-o", "StrictHostKeyChecking=no",
       "-p", String(config.vpsPort),
       `${config.vpsUser}@${config.vpsHost}`,
-      `echo '---METRICS---' && hostname && cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 && uptime -p 2>/dev/null || uptime && top -bn1 | grep 'Cpu' | awk '{print $2}' && free -m | awk '/Mem:/ {print $2, $3}' && df -BG / | awk 'NR==2 {gsub("G",""); print $2, $3}' && systemctl is-active nginx node fail2ban certbot 2>/dev/null || echo 'unknown'`,
+      `echo '---METRICS---' && hostname && cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 && uptime -p 2>/dev/null || uptime && top -bn1 | grep 'Cpu' | awk '{print $2}' && free -m | awk '/Mem:/ {print $2, $3}' && df -BG / | awk 'NR==2 {gsub("G",""); print $2, $3}' && systemctl is-active nginx node fail2ban certbot 2>/dev/null || echo 'unknown' && echo '---UPDATES---' && apt list --upgradable 2>/dev/null | grep -c upgradable || echo '0' && apt list --upgradable 2>/dev/null | grep -i security | wc -l || echo '0'`,
     ];
 
     const proc = Bun.spawn(sshCmd, { stdout: "pipe", stderr: "pipe" });
@@ -50,6 +51,7 @@ export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
         disk: { used: 0, total: 0, pct: 0 },
         sshLatency,
         services: [],
+        pendingUpdates: { total: 0, security: 0 },
       };
     }
 
@@ -75,6 +77,16 @@ export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
       status: (serviceStatuses[i] === "active" ? "running" : serviceStatuses[i] === "inactive" ? "idle" : "stopped") as "running" | "stopped" | "idle",
     }));
 
+    // Parse pending updates (after ---UPDATES--- marker)
+    const updatesStart = lines.indexOf("---UPDATES---");
+    let pendingTotal = 0;
+    let pendingSecurity = 0;
+    if (updatesStart >= 0) {
+      const updatesData = lines.slice(updatesStart + 1);
+      pendingTotal = Math.max(0, parseInt(updatesData[0] ?? "0") || 0);
+      pendingSecurity = Math.max(0, parseInt(updatesData[1] ?? "0") || 0);
+    }
+
     const ramPct = ramTotal > 0 ? Math.round((ramUsed / ramTotal) * 100) : 0;
     const diskPct = diskTotal > 0 ? Math.round((diskUsed / diskTotal) * 100) : 0;
 
@@ -94,6 +106,7 @@ export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
       disk: { used: diskUsed, total: diskTotal, pct: diskPct },
       sshLatency,
       services,
+      pendingUpdates: { total: pendingTotal, security: pendingSecurity },
     };
   } catch (err) {
     console.error("[vps] SSH collection failed:", err);
