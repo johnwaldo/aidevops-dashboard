@@ -58,7 +58,7 @@ function App() {
               <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
             </div>
             <div className="flex flex-1 flex-col overflow-hidden">
-              <TopBar wsStatus={wsStatus} />
+              <TopBar wsStatus={wsStatus} onNavigate={setCurrentPage} />
               <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
                 <PageComponent />
               </main>
