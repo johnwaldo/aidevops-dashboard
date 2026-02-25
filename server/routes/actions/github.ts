@@ -1,18 +1,19 @@
-import { config } from "../../config";
+import { getSecret } from "../../secrets";
 import { logAudit, sanitizeParams } from "../../writers/audit-log";
 import { writeAuthMiddleware } from "../../middleware/write-auth";
 import { cacheInvalidatePrefix } from "../../cache/store";
 import { apiResponse, apiError } from "../_helpers";
 
 async function githubApi(path: string, method: string, body?: unknown): Promise<Response> {
-  if (!config.githubToken) {
+  const token = await getSecret("GITHUB_TOKEN");
+  if (!token) {
     throw new Error("GitHub token not configured");
   }
 
   const res = await fetch(`https://api.github.com${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${config.githubToken}`,
+      Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       ...(body ? { "Content-Type": "application/json" } : {}),
@@ -29,7 +30,7 @@ async function githubApi(path: string, method: string, body?: unknown): Promise<
 }
 
 export async function handlePRApprove(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();
@@ -83,7 +84,7 @@ export async function handlePRApprove(req: Request): Promise<Response> {
 }
 
 export async function handlePRMerge(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();
@@ -140,7 +141,7 @@ export async function handlePRMerge(req: Request): Promise<Response> {
 }
 
 export async function handleWorkflowRerun(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();

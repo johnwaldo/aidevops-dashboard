@@ -10,7 +10,7 @@ const todoPath = `${config.aidevopsRepo}/TODO.md`;
 const writer = new TodoWriter(todoPath);
 
 export async function handleTaskMove(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();
@@ -61,7 +61,7 @@ export async function handleTaskMove(req: Request): Promise<Response> {
 }
 
 export async function handleTaskCreate(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();
@@ -125,7 +125,7 @@ export async function handleTaskCreate(req: Request): Promise<Response> {
 }
 
 export async function handleTaskUpdate(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();

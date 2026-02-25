@@ -1,4 +1,5 @@
 import { config } from "../config";
+import { hasSecret } from "../secrets";
 import { getAidevopsStatus } from "../parsers/status-parser";
 import { cacheGet, cacheSet, CACHE_TTL } from "../cache/store";
 import { apiResponse, apiError } from "./_helpers";
@@ -14,9 +15,13 @@ export async function handleSettings(_req: Request): Promise<Response> {
     const status = await getAidevopsStatus();
 
     // Check which API keys are configured (names only, never values)
+    const [hasGithub, hasUpdown] = await Promise.all([
+      hasSecret("GITHUB_TOKEN"),
+      hasSecret("UPDOWN_API_KEY"),
+    ]);
     const apiKeys = [
-      { service: "GitHub", configured: !!config.githubToken, status: config.githubToken ? "valid" : "missing" },
-      { service: "updown.io", configured: !!config.updownApiKey, status: config.updownApiKey ? "valid" : "missing" },
+      { service: "GitHub", configured: hasGithub, status: hasGithub ? "valid" : "missing" },
+      { service: "updown.io", configured: hasUpdown, status: hasUpdown ? "valid" : "missing" },
     ];
 
     // Try to detect more keys from environment

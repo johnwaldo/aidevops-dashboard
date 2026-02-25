@@ -58,46 +58,8 @@ export const config = {
   // Auth (Phase 4)
   localhostBypass: process.env.DASHBOARD_LOCALHOST_BYPASS !== "false",
   allowedTailscaleUsers: (process.env.DASHBOARD_ALLOWED_USERS ?? "").split(",").filter(Boolean),
-  dashboardToken: null as string | null,
 
   // Rate limiting
   readRateLimit: Number(process.env.DASHBOARD_READ_RATE_LIMIT ?? 100),
   wsMaxConnections: Number(process.env.DASHBOARD_WS_MAX ?? 5),
-
-  // Secrets (loaded at startup)
-  githubToken: null as string | null,
-  updownApiKey: null as string | null,
 };
-
-export async function loadSecrets(): Promise<void> {
-  try {
-    const result = await Bun.spawn(["aidevops", "secret", "get", "GITHUB_TOKEN"], {
-      stdout: "pipe",
-      stderr: "pipe",
-    }).exited;
-    if (result === 0) {
-      // Secret loaded successfully — we don't store the value in config
-      // Instead, routes that need it call getSecret() at request time
-    }
-  } catch {
-    // gopass not available — fall back to env vars
-  }
-
-  config.githubToken = process.env.GITHUB_TOKEN ?? null;
-  config.updownApiKey = process.env.UPDOWN_API_KEY ?? null;
-  config.dashboardToken = process.env.DASHBOARD_TOKEN ?? null;
-
-  // Try gh auth token as fallback for GitHub
-  if (!config.githubToken) {
-    try {
-      const proc = Bun.spawn(["gh", "auth", "token"], { stdout: "pipe", stderr: "pipe" });
-      const text = await new Response(proc.stdout).text();
-      await proc.exited;
-      if (text.trim()) {
-        config.githubToken = text.trim();
-      }
-    } catch {
-      // gh not available
-    }
-  }
-}

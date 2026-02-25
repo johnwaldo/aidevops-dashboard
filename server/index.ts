@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import { config, loadSecrets } from "./config";
+import { config } from "./config";
+import { getSecret, hasSecret } from "./secrets";
 import { handleTasks } from "./routes/tasks";
 
 // Read dashboard version from root package.json (single source of truth)
@@ -43,9 +44,6 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason) => {
   logger.error("Unhandled rejection", { reason: String(reason) });
 });
-
-// Load secrets before starting
-await loadSecrets();
 
 // Start subsystems with resilience — failures don't prevent server startup
 const startupResults = await Promise.allSettled([
@@ -160,7 +158,7 @@ const server = Bun.serve({
     if (rateLimited) return securityHeaders(req, rateLimited);
 
     // Authentication
-    const authBlocked = authMiddleware(req, remoteIp);
+    const authBlocked = await authMiddleware(req, remoteIp);
     if (authBlocked) return securityHeaders(req, authBlocked);
 
     // API routes
@@ -225,7 +223,8 @@ const server = Bun.serve({
   },
 });
 
-const authMode = config.dashboardToken ? "token" : config.localhostBypass ? "localhost-only" : "open";
+const hasDashboardToken = await hasSecret("DASHBOARD_TOKEN");
+const authMode = hasDashboardToken ? "token" : config.localhostBypass ? "localhost-only" : "open";
 
 logger.info("AiDevOps Dashboard Server started", {
   version: DASHBOARD_VERSION,
@@ -235,10 +234,10 @@ logger.info("AiDevOps Dashboard Server started", {
   auth: authMode,
   localhostBypass: config.localhostBypass,
   readRateLimit: config.readRateLimit,
-  github: config.githubToken ? "configured" : "not configured",
+  github: (await hasSecret("GITHUB_TOKEN")) ? "configured" : "not configured",
   vps: config.enableVPS && config.vpsHost ? config.vpsHost : "disabled",
   ollama: config.ollamaHost,
-  uptime: config.updownApiKey ? "configured" : "not configured",
+  uptime: (await hasSecret("UPDOWN_API_KEY")) ? "configured" : "not configured",
 });
 
 // Also print to console for dev visibility
