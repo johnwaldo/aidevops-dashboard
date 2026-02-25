@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { API_BASE } from "@/lib/config";
+import { getAuthHeaders } from "@/hooks/useAuth";
 
 interface ApiResponse<T> {
   data: T;
@@ -23,7 +24,9 @@ export function useApiData<T>(endpoint: string, refreshInterval?: number): UseAp
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/${endpoint}`);
+      const res = await fetch(`${API_BASE}/api/${endpoint}`, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) {
         const errBody = await res.json().catch(() => null);
         throw new Error(errBody?.error?.message ?? `HTTP ${res.status}`);
