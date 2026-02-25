@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 const CONFIG_DIR = join(HOME, ".aidevops/dashboard");
 const CONFIG_PATH = join(CONFIG_DIR, "settings.json");
 

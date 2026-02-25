@@ -1,7 +1,7 @@
 import { mkdirSync, readdirSync, unlinkSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 const LOG_DIR = `${HOME}/.aidevops/dashboard/logs`;
 const LOG_RETENTION_DAYS = 7;
 const LOG_MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 const BACKUP_DIR = join(HOME, ".aidevops/dashboard/backups");
 const MAX_BACKUPS = 20;
 

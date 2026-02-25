@@ -647,7 +647,7 @@ interface AuditEntry {
   action: string;       // "tasks.move" | "github.pr.approve" | "agents.dispatch" | etc.
   target: string;       // What was acted on (task ID, PR ref, agent name)
   params: any;          // Action parameters (sanitized — no secrets)
-  user: string;         // Who did it (from auth: "localhost", "j@tailnet", "api-token")
+  user: string;         // Who did it (from auth: "localhost", "user@tailnet", "api-token")
   result: "success" | "failure";
   error?: string;       // Error message if failed
   durationMs: number;   // How long the action took
@@ -886,12 +886,12 @@ showToast("info", "Agent dispatched — running in background");
 
 ```jsonl
 {"ts":"2026-03-01T14:30:00Z","action":"tasks.move","target":"implement-label-export","params":{"from":"backlog","to":"inProgress"},"user":"localhost","result":"success","durationMs":12}
-{"ts":"2026-03-01T14:31:00Z","action":"tasks.create","target":"new-task","params":{"title":"Fix header alignment","column":"backlog","project":"custom-water-ilds"},"user":"localhost","result":"success","durationMs":8}
-{"ts":"2026-03-01T14:35:00Z","action":"github.pr.approve","target":"custom-water-ilds#47","params":{"owner":"marcusquinn","repo":"custom-water-ilds","prNumber":47},"user":"j@tailnet","result":"success","durationMs":340}
-{"ts":"2026-03-01T14:36:00Z","action":"github.pr.merge","target":"custom-water-ilds#47","params":{"owner":"marcusquinn","repo":"custom-water-ilds","prNumber":47,"method":"squash"},"user":"j@tailnet","result":"success","durationMs":890}
-{"ts":"2026-03-01T14:40:00Z","action":"agents.dispatch","target":"@seo","params":{"command":"analyze custom-water-web","project":"custom-water-web"},"user":"localhost","result":"success","durationMs":45}
+{"ts":"2026-03-01T14:31:00Z","action":"tasks.create","target":"new-task","params":{"title":"Fix header alignment","column":"backlog","project":"acme-app"},"user":"localhost","result":"success","durationMs":8}
+{"ts":"2026-03-01T14:35:00Z","action":"github.pr.approve","target":"acme-app#47","params":{"owner":"youruser","repo":"acme-app","prNumber":47},"user":"user@tailnet","result":"success","durationMs":340}
+{"ts":"2026-03-01T14:36:00Z","action":"github.pr.merge","target":"acme-app#47","params":{"owner":"youruser","repo":"acme-app","prNumber":47,"method":"squash"},"user":"user@tailnet","result":"success","durationMs":890}
+{"ts":"2026-03-01T14:40:00Z","action":"agents.dispatch","target":"@seo","params":{"command":"analyze acme-web","project":"acme-web"},"user":"localhost","result":"success","durationMs":45}
 {"ts":"2026-03-01T14:45:00Z","action":"settings.budget","target":"monthlyCap","params":{"old":400,"new":500},"user":"localhost","result":"success","durationMs":5}
-{"ts":"2026-03-01T14:50:00Z","action":"needs.dismiss","target":"need-ssl-expiry-warning","params":{},"user":"j@tailnet","result":"success","durationMs":3}
+{"ts":"2026-03-01T14:50:00Z","action":"needs.dismiss","target":"need-ssl-expiry-warning","params":{},"user":"user@tailnet","result":"success","durationMs":3}
 ```
 
 ---
