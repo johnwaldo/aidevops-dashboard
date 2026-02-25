@@ -1,10 +1,14 @@
 import { join } from "path";
-import { cacheGet, cacheSet } from "../cache/store";
+import { cacheGet, cacheSet, cacheInvalidate } from "../cache/store";
 import { logAudit } from "../writers/audit-log";
 import { writeAuthMiddleware } from "../middleware/write-auth";
+import { loadSettings } from "../writers/config-writer";
+import { logger } from "../health/logger";
 import { apiResponse, apiError } from "./_helpers";
 
 const REPO_DIR = join(import.meta.dir, "../..");
+const AUTO_UPDATE_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
+let autoUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
 export interface UpdateStatus {
   updateAvailable: boolean;
@@ -83,7 +87,6 @@ export async function handleUpdateApply(req: Request): Promise<Response> {
     });
 
     // Invalidate update cache so next check reflects new state
-    const { cacheInvalidate } = await import("../cache/store");
     cacheInvalidate("updateCheck");
 
     if (!success) {
@@ -113,5 +116,86 @@ export async function handleUpdateApply(req: Request): Promise<Response> {
     });
 
     return apiError("UPDATE_ERROR", String(err instanceof Error ? err.message : err), "actions/update", 502);
+  }
+}
+
+async function autoUpdateCheck(): Promise<void> {
+  const settings = loadSettings();
+  if (settings.updateMode !== "auto") return;
+
+  try {
+    const { stdout } = await runScript([join(REPO_DIR, "update.sh"), "--check"]);
+    const status: UpdateStatus = JSON.parse(stdout);
+
+    if (!status.updateAvailable) return;
+
+    logger.info("Auto-update: update available", {
+      current: status.currentVersion,
+      latest: status.latestVersion,
+      commits: status.commitsBehind,
+    });
+
+    // Apply the update
+    const start = Date.now();
+    const result = await runScript([join(REPO_DIR, "update.sh")]);
+
+    if (result.exitCode === 0) {
+      const versionMatch = result.stdout.match(/Updated to v([\d.]+)/);
+      logger.info("Auto-update: applied successfully", {
+        newVersion: versionMatch?.[1] ?? "unknown",
+        durationMs: Date.now() - start,
+      });
+
+      logAudit({
+        ts: new Date().toISOString(),
+        action: "dashboard.auto-update",
+        target: "aidevops-dashboard",
+        params: { from: status.currentVersion, to: status.latestVersion },
+        user: "auto-update",
+        result: "success",
+        durationMs: Date.now() - start,
+      });
+
+      cacheInvalidate("updateCheck");
+    } else {
+      logger.error("Auto-update: failed", { stderr: result.stderr, exitCode: result.exitCode });
+
+      logAudit({
+        ts: new Date().toISOString(),
+        action: "dashboard.auto-update",
+        target: "aidevops-dashboard",
+        params: { from: status.currentVersion, to: status.latestVersion },
+        user: "auto-update",
+        result: "failure",
+        error: result.stderr || `exit code ${result.exitCode}`,
+        durationMs: Date.now() - start,
+      });
+    }
+  } catch (err) {
+    logger.error("Auto-update: check failed", { error: String(err) });
+  }
+}
+
+export function startAutoUpdateTimer(): void {
+  if (autoUpdateTimer) return;
+
+  const settings = loadSettings();
+  logger.info(`Auto-update: mode=${settings.updateMode}, interval=12h`);
+
+  // Run first check after 1 minute (let server fully start)
+  setTimeout(() => {
+    autoUpdateCheck();
+  }, 60_000);
+
+  // Then every 12 hours
+  autoUpdateTimer = setInterval(() => {
+    autoUpdateCheck();
+  }, AUTO_UPDATE_INTERVAL_MS);
+}
+
+export function stopAutoUpdateTimer(): void {
+  if (autoUpdateTimer) {
+    clearInterval(autoUpdateTimer);
+    autoUpdateTimer = null;
   }
 }

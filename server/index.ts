@@ -25,10 +25,10 @@ import { handleDiagnostics } from "./health/diagnostics";
 import { handleTaskMove, handleTaskCreate, handleTaskUpdate } from "./routes/actions/tasks";
 import { handlePRApprove, handlePRMerge, handleWorkflowRerun } from "./routes/actions/github";
 import { handleAgentDispatch } from "./routes/actions/agents";
-import { handleSettingsGet, handleBudgetUpdate, handleAlertUpdate, handleCollectorToggle, handleRefreshIntervalUpdate } from "./routes/actions/settings";
+import { handleSettingsGet, handleBudgetUpdate, handleAlertUpdate, handleCollectorToggle, handleRefreshIntervalUpdate, handleUpdateModeChange } from "./routes/actions/settings";
 import { handleNeedDismiss, handleNeedSnooze } from "./routes/actions/needs";
 import { handleVPSUpdate } from "./routes/actions/vps";
-import { handleUpdateCheck, handleUpdateApply } from "./routes/update";
+import { handleUpdateCheck, handleUpdateApply, startAutoUpdateTimer } from "./routes/update";
 import { handleAudit } from "./routes/audit";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
@@ -51,10 +51,11 @@ process.on("unhandledRejection", (reason) => {
 const startupResults = await Promise.allSettled([
   Promise.resolve(startFileWatchers()),
   Promise.resolve(startCacheCleanup()),
+  Promise.resolve(startAutoUpdateTimer()),
 ]);
 
 for (const [i, result] of startupResults.entries()) {
-  const names = ["file-watchers", "cache-cleanup"];
+  const names = ["file-watchers", "cache-cleanup", "auto-update"];
   if (result.status === "rejected") {
     logger.error(`Startup: ${names[i]} failed`, { error: String(result.reason) });
   } else {
@@ -108,6 +109,7 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/actions/settings/alerts": handleAlertUpdate,
   "/api/actions/settings/collectors": handleCollectorToggle,
   "/api/actions/settings/refresh-intervals": handleRefreshIntervalUpdate,
+  "/api/actions/settings/update-mode": handleUpdateModeChange,
   // Phase 5 — write operations (needs)
   "/api/actions/needs/dismiss": handleNeedDismiss,
   "/api/actions/needs/snooze": handleNeedSnooze,
