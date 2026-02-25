@@ -24,7 +24,7 @@ export async function handleAgentDispatch(req: Request): Promise<Response> {
     return apiError("BAD_REQUEST", "Invalid agent name", "actions/agents", 400);
   }
 
-  const cwd = body.workDir ?? body.project ?? process.env.HOME ?? "/Users/justin";
+  const cwd = body.workDir ?? body.project ?? process.env.HOME ?? "/tmp";
 
   try {
     // Spawn as detached background process

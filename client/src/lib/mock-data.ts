@@ -5,9 +5,9 @@
 
 export const systemMock = {
   vps: {
-    hostname: "vps-hetzner-01",
-    ip: "65.108.xxx.xxx",
-    provider: "Hetzner",
+    hostname: "vps-01",
+    ip: "203.0.113.10",
+    provider: "VPS Provider",
     os: "Ubuntu 24.04",
     status: "healthy" as const,
     uptime: "41d 7h 23m",
@@ -18,7 +18,7 @@ export const systemMock = {
     lastSSH: "2026-02-24T09:14:00Z",
     services: [
       { name: "nginx", status: "running" as const },
-      { name: "node (ILDS)", status: "running" as const },
+      { name: "node (app)", status: "running" as const },
       { name: "certbot", status: "idle" as const },
       { name: "fail2ban", status: "running" as const },
     ],
@@ -37,9 +37,9 @@ export const systemMock = {
     status: "connected" as const,
     nodes: [
       { name: "mac-mini-m4pro", online: true, lastSeen: "now", ip: "100.x.x.1" },
-      { name: "vps-hetzner-01", online: true, lastSeen: "now", ip: "100.x.x.2" },
-      { name: "iphone-j", online: true, lastSeen: "2m ago", ip: "100.x.x.3" },
-      { name: "macbook-j", online: false, lastSeen: "3d ago", ip: "100.x.x.4" },
+      { name: "vps-01", online: true, lastSeen: "now", ip: "100.x.x.2" },
+      { name: "iphone", online: true, lastSeen: "2m ago", ip: "100.x.x.3" },
+      { name: "macbook", online: false, lastSeen: "3d ago", ip: "100.x.x.4" },
     ],
   },
 };
@@ -90,20 +90,20 @@ export const tokensMock = {
 };
 
 export const needsMock = [
-  { id: 1, type: "review" as const, priority: "critical" as const, title: "PR #47: ILDS label export optimization", source: "GitHub", age: "2h", project: "custom-water-ilds", impact: "Blocks next deploy" },
-  { id: 2, type: "approval" as const, priority: "high" as const, title: "Deploy Shopify theme v2.8.1 to production", source: "CI/CD", age: "45m", project: "custom-water-shopify", impact: "Staging verified, waiting on go" },
-  { id: 3, type: "security" as const, priority: "critical" as const, title: "2 HIGH vulnerabilities in node_modules", source: "Snyk", age: "1d", project: "custom-water-ilds", impact: "Exposed in production" },
-  { id: 4, type: "expiring" as const, priority: "medium" as const, title: "SSL cert for create.customwater.com — 12 days", source: "Cert Monitor", age: "—", project: "infrastructure", impact: "Site goes insecure" },
-  { id: 5, type: "failure" as const, priority: "high" as const, title: "E2E tests failing on main branch", source: "GitHub Actions", age: "3h", project: "custom-water-ilds", impact: "Merges blocked" },
-  { id: 6, type: "agent" as const, priority: "medium" as const, title: "@seo agent needs strategy decision on keyword cannibalization", source: "Matrix/#seo-ops", age: "6h", project: "custom-water-web", impact: "SEO work paused" },
-  { id: 7, type: "overdue" as const, priority: "low" as const, title: "Zoho CRM custom view cleanup — 3 days overdue", source: "TODO.md", age: "3d", project: "custom-water-crm", impact: "Technical debt" },
+  { id: 1, type: "review" as const, priority: "critical" as const, title: "PR #47: App export optimization", source: "GitHub", age: "2h", project: "acme-app", impact: "Blocks next deploy" },
+  { id: 2, type: "approval" as const, priority: "high" as const, title: "Deploy storefront theme v2.8.1 to production", source: "CI/CD", age: "45m", project: "acme-store", impact: "Staging verified, waiting on go" },
+  { id: 3, type: "security" as const, priority: "critical" as const, title: "2 HIGH vulnerabilities in node_modules", source: "Snyk", age: "1d", project: "acme-app", impact: "Exposed in production" },
+  { id: 4, type: "expiring" as const, priority: "medium" as const, title: "SSL cert for app.example.com — 12 days", source: "Cert Monitor", age: "—", project: "infrastructure", impact: "Site goes insecure" },
+  { id: 5, type: "failure" as const, priority: "high" as const, title: "E2E tests failing on main branch", source: "GitHub Actions", age: "3h", project: "acme-app", impact: "Merges blocked" },
+  { id: 6, type: "agent" as const, priority: "medium" as const, title: "@seo agent needs strategy decision on keyword cannibalization", source: "Matrix/#seo-ops", age: "6h", project: "acme-web", impact: "SEO work paused" },
+  { id: 7, type: "overdue" as const, priority: "low" as const, title: "CRM custom view cleanup — 3 days overdue", source: "TODO.md", age: "3d", project: "acme-crm", impact: "Technical debt" },
 ];
 
 export const projectsMock = [
   {
-    name: "custom-water-ilds",
-    description: "Interactive Label Design Studio — React/TS + Fabric.js + Three.js",
-    repo: "github.com/johnwaldo/custom-water-ilds",
+    name: "acme-app",
+    description: "Web application — React/TS + Canvas + 3D rendering",
+    repo: "github.com/youruser/acme-app",
     platform: "github" as const,
     branch: "main",
     lastCommit: { sha: "a3f8c21", message: "fix: export resolution on retina displays", author: "opus-4.5", time: "2h ago" },
@@ -113,14 +113,14 @@ export const projectsMock = [
     prs: 2,
     vulns: { critical: 0, high: 2, medium: 5 },
     language: "TypeScript",
-    category: "Custom Water",
+    category: "Acme Corp",
     tokenSpend: 89.2,
     lastDeploy: "2026-02-22T14:30:00Z",
   },
   {
-    name: "custom-water-shopify",
-    description: "Shopify storefront theme — quantity restrictions, custom pricing, invoice payments",
-    repo: "github.com/johnwaldo/custom-water-shopify",
+    name: "acme-store",
+    description: "E-commerce storefront — custom pricing, invoice payments",
+    repo: "github.com/youruser/acme-store",
     platform: "github" as const,
     branch: "main",
     lastCommit: { sha: "e7b2d94", message: "feat: add name-your-price invoice flow", author: "opus-4.5", time: "1d ago" },
@@ -129,15 +129,15 @@ export const projectsMock = [
     issues: 1,
     prs: 1,
     vulns: { critical: 0, high: 0, medium: 2 },
-    language: "Liquid",
-    category: "Custom Water",
+    language: "TypeScript",
+    category: "Acme Corp",
     tokenSpend: 42.1,
     lastDeploy: "2026-02-23T09:15:00Z",
   },
   {
-    name: "custom-water-web",
+    name: "acme-web",
     description: "Marketing site — SEO optimized, lead capture integration",
-    repo: "github.com/johnwaldo/custom-water-web",
+    repo: "github.com/youruser/acme-web",
     platform: "github" as const,
     branch: "main",
     lastCommit: { sha: "1c9f0ab", message: "seo: restructure H1 tags to resolve cannibalization", author: "sonnet-4.5", time: "6h ago" },
@@ -147,14 +147,14 @@ export const projectsMock = [
     prs: 0,
     vulns: { critical: 0, high: 0, medium: 0 },
     language: "HTML/CSS",
-    category: "Custom Water",
+    category: "Acme Corp",
     tokenSpend: 31.4,
     lastDeploy: "2026-02-24T03:00:00Z",
   },
   {
     name: "aidevops-dashboard",
     description: "This dashboard — Command Center plugin for aidevops",
-    repo: "github.com/johnwaldo/aidevops-dashboard",
+    repo: "github.com/youruser/aidevops-dashboard",
     platform: "github" as const,
     branch: "main",
     lastCommit: { sha: "0000000", message: "initial: phase 1 scaffold", author: "opus-4.6", time: "just now" },
@@ -169,12 +169,12 @@ export const projectsMock = [
     lastDeploy: null,
   },
   {
-    name: "homelab-infra",
+    name: "my-infra",
     description: "Infrastructure configs — Tailscale, Ollama, server provisioning",
-    repo: "github.com/johnwaldo/homelab-infra",
+    repo: "github.com/youruser/my-infra",
     platform: "github" as const,
     branch: "main",
-    lastCommit: { sha: "f42a891", message: "chore: update ollama model list", author: "j", time: "3d ago" },
+    lastCommit: { sha: "f42a891", message: "chore: update ollama model list", author: "user", time: "3d ago" },
     ci: "passing" as const,
     quality: "B",
     issues: 0,
@@ -189,30 +189,30 @@ export const projectsMock = [
 
 export const kanbanMock = {
   backlog: [
-    { id: "t-010", title: "Add Klenty webhook for lead scoring updates", project: "custom-water-crm", priority: "low" as const, agent: null, estimate: "~2h" },
-    { id: "t-011", title: "Implement dark mode for ILDS", project: "custom-water-ilds", priority: "medium" as const, agent: null, estimate: "~6h" },
-    { id: "t-012", title: "Research Reddit communities for Q2 promo push", project: "custom-water-web", priority: "low" as const, agent: null, estimate: "~3h" },
+    { id: "t-010", title: "Add webhook for lead scoring updates", project: "acme-crm", priority: "low" as const, agent: null, estimate: "~2h" },
+    { id: "t-011", title: "Implement dark mode for app", project: "acme-app", priority: "medium" as const, agent: null, estimate: "~6h" },
+    { id: "t-012", title: "Research communities for Q2 promo push", project: "acme-web", priority: "low" as const, agent: null, estimate: "~3h" },
     { id: "t-013", title: "Evaluate Cloudflare Workers for edge caching", project: "infrastructure", priority: "medium" as const, agent: null, estimate: "~4h" },
   ],
   planned: [
-    { id: "t-007", title: "Build Zoho Forms → Klenty email sequence bridge", project: "custom-water-crm", priority: "high" as const, agent: "@code", estimate: "~8h", plan: "3-step integration via Zoho webhook" },
-    { id: "t-008", title: "Implement GA4 enhanced ecommerce for Shopify", project: "custom-water-shopify", priority: "medium" as const, agent: "@seo", estimate: "~4h", plan: "Use GTM dataLayer push" },
+    { id: "t-007", title: "Build CRM forms → email sequence bridge", project: "acme-crm", priority: "high" as const, agent: "@code", estimate: "~8h", plan: "3-step integration via webhook" },
+    { id: "t-008", title: "Implement GA4 enhanced ecommerce tracking", project: "acme-store", priority: "medium" as const, agent: "@seo", estimate: "~4h", plan: "Use GTM dataLayer push" },
   ],
   inProgress: [
-    { id: "t-003", title: "Fix ILDS export resolution on retina displays", project: "custom-water-ilds", priority: "high" as const, agent: "@code", estimate: "~4h", started: "2026-02-24T07:00:00Z", elapsed: "5h" },
-    { id: "t-004", title: "Resolve keyword cannibalization: homepage vs /products", project: "custom-water-web", priority: "high" as const, agent: "@seo", estimate: "~6h", started: "2026-02-24T03:00:00Z", elapsed: "9h" },
+    { id: "t-003", title: "Fix app export resolution on retina displays", project: "acme-app", priority: "high" as const, agent: "@code", estimate: "~4h", started: "2026-02-24T07:00:00Z", elapsed: "5h" },
+    { id: "t-004", title: "Resolve keyword cannibalization: homepage vs /products", project: "acme-web", priority: "high" as const, agent: "@seo", estimate: "~6h", started: "2026-02-24T03:00:00Z", elapsed: "9h" },
     { id: "t-005", title: "aidevops-dashboard Phase 1 mockup", project: "aidevops-dashboard", priority: "high" as const, agent: "@code", estimate: "~16h", started: "2026-02-24T10:00:00Z", elapsed: "2h" },
   ],
   pendingApproval: [
-    { id: "t-001", title: "PR #47: ILDS label export optimization", project: "custom-water-ilds", priority: "critical" as const, agent: "@code", waiting: "2h", requires: "Code review + merge" },
-    { id: "t-002", title: "Deploy Shopify theme v2.8.1", project: "custom-water-shopify", priority: "high" as const, agent: "@deploy", waiting: "45m", requires: "Production deploy approval" },
+    { id: "t-001", title: "PR #47: App export optimization", project: "acme-app", priority: "critical" as const, agent: "@code", waiting: "2h", requires: "Code review + merge" },
+    { id: "t-002", title: "Deploy storefront theme v2.8.1", project: "acme-store", priority: "high" as const, agent: "@deploy", waiting: "45m", requires: "Production deploy approval" },
   ],
   recentlyCompleted: [
-    { id: "t-020", title: "Add quantity restriction metafields to Shopify", project: "custom-water-shopify", completed: "2026-02-23T16:00:00Z", agent: "@code", elapsed: "3h" },
-    { id: "t-021", title: "Create custom Zoho CRM views for ILDS leads", project: "custom-water-crm", completed: "2026-02-23T11:00:00Z", agent: "@code", elapsed: "2h" },
-    { id: "t-022", title: "Fix baseboard heater rattle — order replacement part", project: "personal", completed: "2026-02-22T19:00:00Z", agent: null, elapsed: "1h" },
+    { id: "t-020", title: "Add quantity restriction metafields to store", project: "acme-store", completed: "2026-02-23T16:00:00Z", agent: "@code", elapsed: "3h" },
+    { id: "t-021", title: "Create custom CRM views for app leads", project: "acme-crm", completed: "2026-02-23T11:00:00Z", agent: "@code", elapsed: "2h" },
+    { id: "t-022", title: "Update documentation for new API endpoints", project: "acme-app", completed: "2026-02-22T19:00:00Z", agent: null, elapsed: "1h" },
     { id: "t-023", title: "Update Ollama models to latest quantizations", project: "infrastructure", completed: "2026-02-22T14:00:00Z", agent: "@code", elapsed: "30m" },
-    { id: "t-024", title: "SEO audit: Map all H1/H2 tags across customwater.com", project: "custom-water-web", completed: "2026-02-21T22:00:00Z", agent: "@seo", elapsed: "4h" },
+    { id: "t-024", title: "SEO audit: Map all H1/H2 tags across example.com", project: "acme-web", completed: "2026-02-21T22:00:00Z", agent: "@seo", elapsed: "4h" },
   ],
 };
 
@@ -220,12 +220,12 @@ export const agentsMock = {
   primary: [
     { name: "@code", desc: "Primary coding agent", status: "active" as const, lastUsed: "2m ago", subagents: 142, mcps: ["github", "filesystem", "code-quality"] },
     { name: "@seo", desc: "SEO analysis and optimization", status: "active" as const, lastUsed: "6h ago", subagents: 48, mcps: ["search-console", "ahrefs", "dataforseo"] },
-    { name: "@deploy", desc: "Deployment and CI/CD", status: "idle" as const, lastUsed: "1d ago", subagents: 35, mcps: ["github-actions", "hostinger", "hetzner"] },
+    { name: "@deploy", desc: "Deployment and CI/CD", status: "idle" as const, lastUsed: "1d ago", subagents: 35, mcps: ["github-actions", "ssh", "docker"] },
     { name: "@wordpress", desc: "WordPress management", status: "idle" as const, lastUsed: "3d ago", subagents: 67, mcps: ["mainwp", "localwp", "wp-rest"] },
     { name: "@browser", desc: "Browser automation", status: "idle" as const, lastUsed: "2d ago", subagents: 28, mcps: ["playwright", "crawl4ai", "stagehand"] },
     { name: "@code-quality", desc: "Code quality enforcement", status: "idle" as const, lastUsed: "1d ago", subagents: 52, mcps: ["sonarcloud", "codacy", "codefactor"] },
-    { name: "@hostinger", desc: "Hostinger server management", status: "idle" as const, lastUsed: "5d ago", subagents: 31, mcps: ["hostinger", "ssh"] },
-    { name: "@hetzner", desc: "Hetzner cloud management", status: "idle" as const, lastUsed: "2d ago", subagents: 24, mcps: ["hetzner", "ssh"] },
+    { name: "@vps-a", desc: "VPS provider A management", status: "idle" as const, lastUsed: "5d ago", subagents: 31, mcps: ["vps-api", "ssh"] },
+    { name: "@vps-b", desc: "VPS provider B management", status: "idle" as const, lastUsed: "2d ago", subagents: 24, mcps: ["vps-api", "ssh"] },
     { name: "@git", desc: "Git platform operations", status: "idle" as const, lastUsed: "4h ago", subagents: 41, mcps: ["github", "gitlab", "gitea"] },
     { name: "@agent-review", desc: "Session review and agent improvement", status: "idle" as const, lastUsed: "1d ago", subagents: 18, mcps: [] },
     { name: "@document", desc: "Document creation and conversion", status: "idle" as const, lastUsed: "2d ago", subagents: 22, mcps: ["pandoc"] },
@@ -236,8 +236,8 @@ export const agentsMock = {
     { name: "ollama", status: "connected" as const, loading: "eager" as const, lastPing: "5s ago" },
     { name: "search-console", status: "connected" as const, loading: "on-demand" as const, lastPing: "6h ago" },
     { name: "sonarcloud", status: "disconnected" as const, loading: "on-demand" as const, lastPing: "1d ago" },
-    { name: "hostinger", status: "connected" as const, loading: "on-demand" as const, lastPing: "5d ago" },
-    { name: "hetzner", status: "connected" as const, loading: "on-demand" as const, lastPing: "2d ago" },
+    { name: "vps-provider-a", status: "connected" as const, loading: "on-demand" as const, lastPing: "5d ago" },
+    { name: "vps-provider-b", status: "connected" as const, loading: "on-demand" as const, lastPing: "2d ago" },
     { name: "playwright", status: "stopped" as const, loading: "on-demand" as const, lastPing: "2d ago" },
     { name: "crawl4ai", status: "stopped" as const, loading: "on-demand" as const, lastPing: "3d ago" },
     { name: "pandoc", status: "connected" as const, loading: "eager" as const, lastPing: "30s ago" },
@@ -274,7 +274,7 @@ export const documentsMock = {
               type: "dir" as const,
               name: "development",
               children: [
-                { type: "file" as const, name: "ilds-architecture.md", size: "12.4 KB", modified: "3d ago" },
+                { type: "file" as const, name: "app-architecture.md", size: "12.4 KB", modified: "3d ago" },
               ],
             },
           ],
@@ -315,19 +315,19 @@ export const settingsMock = {
 };
 
 export const uptimeMock = [
-  { name: "customwater.com", url: "https://customwater.com", status: "up" as const, uptime7d: 99.98, uptime30d: 99.94, responseTime: 342, history: [320, 335, 410, 342] },
-  { name: "create.customwater.com", url: "https://create.customwater.com", status: "up" as const, uptime7d: 99.87, uptime30d: 99.82, responseTime: 580, history: [610, 560, 595, 580] },
+  { name: "example.com", url: "https://example.com", status: "up" as const, uptime7d: 99.98, uptime30d: 99.94, responseTime: 342, history: [320, 335, 410, 342] },
+  { name: "app.example.com", url: "https://app.example.com", status: "up" as const, uptime7d: 99.87, uptime30d: 99.82, responseTime: 580, history: [610, 560, 595, 580] },
   { name: "VPS API", url: "https://api.example.com", status: "up" as const, uptime7d: 100, uptime30d: 99.99, responseTime: 89, history: [92, 85, 94, 89] },
 ];
 
 // Recent activity for the overview page
 export const recentActivityMock = [
-  { id: 1, type: "commit" as const, message: "fix: export resolution on retina displays", project: "custom-water-ilds", agent: "opus-4.5", time: "2h ago" },
-  { id: 2, type: "ci" as const, message: "E2E tests failed on main", project: "custom-water-ilds", agent: null, time: "3h ago" },
-  { id: 3, type: "deploy" as const, message: "Deployed v2.8.0 to staging", project: "custom-water-shopify", agent: "@deploy", time: "4h ago" },
-  { id: 4, type: "agent" as const, message: "@seo started keyword cannibalization analysis", project: "custom-water-web", agent: "@seo", time: "6h ago" },
-  { id: 5, type: "commit" as const, message: "seo: restructure H1 tags", project: "custom-water-web", agent: "sonnet-4.5", time: "6h ago" },
-  { id: 6, type: "security" as const, message: "Snyk found 2 HIGH vulnerabilities", project: "custom-water-ilds", agent: null, time: "1d ago" },
-  { id: 7, type: "commit" as const, message: "feat: add name-your-price invoice flow", project: "custom-water-shopify", agent: "opus-4.5", time: "1d ago" },
-  { id: 8, type: "agent" as const, message: "@code completed Zoho CRM view creation", project: "custom-water-crm", agent: "@code", time: "1d ago" },
+  { id: 1, type: "commit" as const, message: "fix: export resolution on retina displays", project: "acme-app", agent: "opus-4.5", time: "2h ago" },
+  { id: 2, type: "ci" as const, message: "E2E tests failed on main", project: "acme-app", agent: null, time: "3h ago" },
+  { id: 3, type: "deploy" as const, message: "Deployed v2.8.0 to staging", project: "acme-store", agent: "@deploy", time: "4h ago" },
+  { id: 4, type: "agent" as const, message: "@seo started keyword cannibalization analysis", project: "acme-web", agent: "@seo", time: "6h ago" },
+  { id: 5, type: "commit" as const, message: "seo: restructure H1 tags", project: "acme-web", agent: "sonnet-4.5", time: "6h ago" },
+  { id: 6, type: "security" as const, message: "Snyk found 2 HIGH vulnerabilities", project: "acme-app", agent: null, time: "1d ago" },
+  { id: 7, type: "commit" as const, message: "feat: add name-your-price invoice flow", project: "acme-store", agent: "opus-4.5", time: "1d ago" },
+  { id: 8, type: "agent" as const, message: "@code completed CRM view creation", project: "acme-crm", agent: "@code", time: "1d ago" },
 ];

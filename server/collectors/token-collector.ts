@@ -91,7 +91,7 @@ function calculateCost(entry: TokenEntry): number {
 }
 
 function projectFromPath(filePath: string): string {
-  // ~/.claude/projects/-Users-justin-ilds/xxx.jsonl -> ilds
+  // ~/.claude/projects/-Users-{user}-{project}/xxx.jsonl -> {project}
   const dirName = basename(dirname(filePath));
   const parts = dirName.split("-").filter(Boolean);
   return parts[parts.length - 1] ?? dirName;

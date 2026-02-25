@@ -150,7 +150,7 @@ These assume Opus 4.6 doing the building with human review between sessions. The
 │  Local:    ~/.aidevops/ | TODO.md | ~/Git/*              │
 │  APIs:     GitHub | Ollama | Anthropic | updown.io       │
 │  CLI:      aidevops status | aidevops repos              │
-│  SSH:      VPS metrics (Hostinger/Hetzner)               │
+│  SSH:      VPS metrics (VPS providers)               │
 │  Tailscale: Mesh network for secure remote access        │
 │  Matrix:   Conduit/Synapse Client-Server API (Phase 6)   │
 └─────────────────────────────────────────────────────────┘

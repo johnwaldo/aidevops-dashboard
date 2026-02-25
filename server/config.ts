@@ -1,4 +1,4 @@
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 
 export const config = {
   port: Number(process.env.DASHBOARD_PORT ?? 3000),

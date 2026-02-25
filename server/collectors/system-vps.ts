@@ -85,7 +85,7 @@ export async function collectVPSMetrics(): Promise<VPSMetrics | null> {
     return {
       hostname,
       ip: config.vpsHost,
-      provider: "Hetzner",
+      provider: "VPS",
       os,
       status,
       uptime,

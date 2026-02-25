@@ -6,7 +6,7 @@ import { cacheInvalidate } from "../../cache/store";
 import { broadcast } from "../../ws/realtime";
 import { apiResponse, apiError } from "../_helpers";
 
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 const NEEDS_STATE_PATH = join(HOME, ".aidevops/dashboard/needs-state.json");
 
 mkdirSync(join(HOME, ".aidevops/dashboard"), { recursive: true });

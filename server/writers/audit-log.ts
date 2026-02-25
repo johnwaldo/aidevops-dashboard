@@ -1,7 +1,7 @@
 import { appendFileSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const HOME = process.env.HOME ?? "/Users/justin";
+const HOME = process.env.HOME ?? "/tmp";
 const AUDIT_DIR = join(HOME, ".aidevops/dashboard");
 const AUDIT_PATH = join(AUDIT_DIR, "audit.jsonl");
 
