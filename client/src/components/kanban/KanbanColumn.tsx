@@ -9,9 +9,10 @@ interface KanbanColumnProps {
   highlight?: boolean;
   children: React.ReactNode;
   itemIds: string[];
+  headerExtra?: React.ReactNode;
 }
 
-export function KanbanColumn({ id, title, count, highlight, children, itemIds }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, count, highlight, children, itemIds, headerExtra }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -22,10 +23,13 @@ export function KanbanColumn({ id, title, count, highlight, children, itemIds }:
       )}
     >
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#1e1e2e]">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a]">{title}</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1e1e2e] px-1.5 text-[10px] font-mono text-[#71717a]">
-          {count}
-        </span>
+        <div className="flex items-center gap-2">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-[#71717a]">{title}</h3>
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1e1e2e] px-1.5 text-[10px] font-mono text-[#71717a]">
+            {count}
+          </span>
+        </div>
+        {headerExtra}
       </div>
       <div ref={setNodeRef} className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]">
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>

@@ -16,6 +16,8 @@ import { handleCI } from "./routes/ci";
 import { handlePageSpeed } from "./routes/pagespeed";
 import { handleAuthStatus } from "./routes/auth";
 import { handleDiagnostics } from "./health/diagnostics";
+import { handleTaskMove, handleTaskCreate, handleTaskUpdate } from "./routes/actions/tasks";
+import { handleAudit } from "./routes/audit";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
 import { startCacheCleanup } from "./cache/store";
@@ -81,6 +83,11 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/pagespeed": handlePageSpeed,
   // Phase 4 — operational
   "/api/diagnostics": handleDiagnostics,
+  // Phase 5 — write operations
+  "/api/actions/tasks/move": handleTaskMove,
+  "/api/actions/tasks/create": handleTaskCreate,
+  "/api/actions/tasks/update": handleTaskUpdate,
+  "/api/audit": handleAudit,
 };
 
 function extractRemoteIp(req: Request, server: { requestIP?: (req: Request) => { address: string } | null }): string {
