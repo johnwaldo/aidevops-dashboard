@@ -9,12 +9,20 @@ interface TopBarProps {
   onNavigate?: (page: Page) => void;
 }
 
+interface UpdateStatus {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  commitsBehind: number;
+}
+
 export function TopBar({ wsStatus = "connected", onNavigate }: TopBarProps) {
   const { data: health } = useApiData<{ local: { status: string } | null; vps: { status: string } | null }>("health", 15);
   const { data: tokens } = useApiData<{ budget: { today: number; currentMonth: number } }>("tokens", 300);
   const { data: needs } = useApiData<unknown[]>("needs", 10);
   const { data: ollama } = useApiData<{ status: string; loaded: unknown[]; inference: { tokensPerSec: number | null } }>("ollama", 10);
   const { data: status } = useApiData<{ version: { installed: string; latest: string; updateAvailable: boolean } }>("status", 600);
+  const { data: dashUpdate } = useApiData<UpdateStatus>("update/check", 600);
 
   const localStatus = health?.local?.status ?? "unknown";
   const vpsStatus = health?.vps?.status ?? "unknown";
@@ -23,9 +31,12 @@ export function TopBar({ wsStatus = "connected", onNavigate }: TopBarProps) {
   const tps = ollama?.inference?.tokensPerSec;
   const monthSpend = tokens?.budget?.currentMonth ?? 0;
   const needsCount = needs?.length ?? 0;
-  const updateAvailable = status?.version?.updateAvailable ?? false;
-  const latestVersion = status?.version?.latest;
-  const installedVersion = status?.version?.installed;
+  // Show update if either framework or dashboard has an update
+  const frameworkUpdate = status?.version?.updateAvailable ?? false;
+  const dashboardUpdate = dashUpdate?.updateAvailable ?? false;
+  const updateAvailable = frameworkUpdate || dashboardUpdate;
+  const installedVersion = dashUpdate?.currentVersion ?? status?.version?.installed;
+  const latestVersion = dashUpdate?.latestVersion ?? status?.version?.latest;
 
   const nav = (page: Page) => onNavigate?.(page);
 

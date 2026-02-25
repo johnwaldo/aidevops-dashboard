@@ -28,6 +28,7 @@ import { handleAgentDispatch } from "./routes/actions/agents";
 import { handleSettingsGet, handleBudgetUpdate, handleAlertUpdate, handleCollectorToggle, handleRefreshIntervalUpdate } from "./routes/actions/settings";
 import { handleNeedDismiss, handleNeedSnooze } from "./routes/actions/needs";
 import { handleVPSUpdate } from "./routes/actions/vps";
+import { handleUpdateCheck, handleUpdateApply } from "./routes/update";
 import { handleAudit } from "./routes/audit";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
@@ -112,6 +113,9 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/actions/needs/snooze": handleNeedSnooze,
   // VPS management
   "/api/actions/vps/update": handleVPSUpdate,
+  // Dashboard update
+  "/api/update/check": handleUpdateCheck,
+  "/api/actions/update/apply": handleUpdateApply,
   // Phase 5 — audit
   "/api/audit": handleAudit,
 };
