@@ -28,7 +28,7 @@ import { handleAgentDispatch } from "./routes/actions/agents";
 import { handleSettingsGet, handleBudgetUpdate, handleAlertUpdate, handleCollectorToggle, handleRefreshIntervalUpdate, handleUpdateModeChange } from "./routes/actions/settings";
 import { handleNeedDismiss, handleNeedSnooze } from "./routes/actions/needs";
 import { handleVPSUpdate } from "./routes/actions/vps";
-import { handleUpdateCheck, handleUpdateApply, startAutoUpdateTimer } from "./routes/update";
+import { handleUpdateCheck, handleUpdateApply } from "./routes/update";
 import { handleAudit } from "./routes/audit";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
@@ -48,14 +48,14 @@ process.on("unhandledRejection", (reason) => {
 });
 
 // Start subsystems with resilience — failures don't prevent server startup
+// Note: auto-update timer removed — launchd handles scheduling + restart via update.sh
 const startupResults = await Promise.allSettled([
   Promise.resolve(startFileWatchers()),
   Promise.resolve(startCacheCleanup()),
-  Promise.resolve(startAutoUpdateTimer()),
 ]);
 
 for (const [i, result] of startupResults.entries()) {
-  const names = ["file-watchers", "cache-cleanup", "auto-update"];
+  const names = ["file-watchers", "cache-cleanup"];
   if (result.status === "rejected") {
     logger.error(`Startup: ${names[i]} failed`, { error: String(result.reason) });
   } else {
