@@ -1,5 +1,6 @@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { AgentDispatch } from "./AgentDispatch";
 
 interface AgentCardProps {
   name: string;
@@ -12,7 +13,7 @@ interface AgentCardProps {
 
 export function AgentCard({ name, desc, status, lastUsed, subagents, mcps }: AgentCardProps) {
   return (
-    <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4 transition-all hover:border-[#2e2e3e] group cursor-pointer">
+    <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4 transition-all hover:border-[#2e2e3e] group">
       <div className="flex items-start justify-between mb-2">
         <div>
           <h3 className="text-sm font-mono font-semibold text-[#e4e4e7] group-hover:text-cyan-300 transition-colors">
@@ -20,7 +21,10 @@ export function AgentCard({ name, desc, status, lastUsed, subagents, mcps }: Age
           </h3>
           <p className="text-xs text-[#71717a] mt-0.5">{desc}</p>
         </div>
-        <StatusBadge status={status} label={status} />
+        <div className="flex items-center gap-2">
+          <AgentDispatch agentName={name} />
+          <StatusBadge status={status} label={status} />
+        </div>
       </div>
       <div className="flex items-center gap-3 text-[10px] font-mono text-[#71717a] mb-2">
         <span>Last: {lastUsed}</span>
