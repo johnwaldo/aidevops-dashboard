@@ -14,9 +14,13 @@ import { handleSSL } from "./routes/ssl";
 import { handleAlerts } from "./routes/alerts";
 import { handleCI } from "./routes/ci";
 import { handlePageSpeed } from "./routes/pagespeed";
+import { handleAuthStatus } from "./routes/auth";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
 import { apiError } from "./routes/_helpers";
+import { authMiddleware } from "./middleware/auth";
+import { rateLimitMiddleware } from "./middleware/rate-limit";
+import { securityHeaders, handlePreflight } from "./middleware/security";
 
 // Load secrets before starting
 await loadSecrets();
@@ -25,14 +29,16 @@ await loadSecrets();
 startFileWatchers();
 
 const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
-  // Session A — filesystem parsers
+  // Auth
+  "/api/auth/status": handleAuthStatus,
+  // Phase 2A — filesystem parsers
   "/api/tasks": handleTasks,
   "/api/agents": handleAgents,
   "/api/status": handleStatus,
   "/api/documents/tree": handleDocumentsTree,
   "/api/documents/content": handleDocumentsContent,
   "/api/settings": handleSettings,
-  // Session B — external collectors
+  // Phase 2B — external collectors
   "/api/health": handleHealth,
   "/api/health/local": handleHealthLocal,
   "/api/health/vps": handleHealthVPS,
@@ -52,60 +58,79 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/pagespeed": handlePageSpeed,
 };
 
+function extractRemoteIp(req: Request, server: { requestIP?: (req: Request) => { address: string } | null }): string {
+  // Prefer proxy headers (Tailscale Serve sets X-Forwarded-For)
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp;
+
+  // Fall back to Bun's native requestIP (direct TCP connection)
+  try {
+    const ip = server.requestIP?.(req);
+    if (ip?.address) return ip.address;
+  } catch {
+    // Not available
+  }
+
+  return "127.0.0.1";
+}
+
 const server = Bun.serve({
   port: config.port,
+  hostname: "0.0.0.0", // Accept connections from Tailscale, not just localhost
 
-  async fetch(req, server) {
+  async fetch(req, srv) {
     const url = new URL(req.url);
+    const remoteIp = extractRemoteIp(req, srv);
+
+    // CORS preflight — handle before auth
+    const preflight = handlePreflight(req);
+    if (preflight) return preflight;
 
     // WebSocket upgrade
     if (url.pathname === "/ws") {
-      const upgraded = server.upgrade(req);
+      const upgraded = srv.upgrade(req);
       if (!upgraded) {
         return new Response("WebSocket upgrade failed", { status: 400 });
       }
       return undefined as unknown as Response;
     }
 
-    // CORS headers for dev mode
-    const headers = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
+    // Rate limiting — before auth to prevent brute force
+    const rateLimited = rateLimitMiddleware(req, remoteIp);
+    if (rateLimited) return securityHeaders(req, rateLimited);
 
-    if (req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers });
-    }
+    // Authentication
+    const authBlocked = authMiddleware(req, remoteIp);
+    if (authBlocked) return securityHeaders(req, authBlocked);
 
     // API routes
     const handler = ROUTES[url.pathname];
     if (handler) {
       try {
         const response = await handler(req);
-        // Add CORS headers to response
-        for (const [key, value] of Object.entries(headers)) {
-          response.headers.set(key, value);
-        }
-        return response;
+        return securityHeaders(req, response);
       } catch (err) {
-        return apiError("INTERNAL_ERROR", String(err), url.pathname);
+        return securityHeaders(req, apiError("INTERNAL_ERROR", String(err), url.pathname));
       }
     }
 
-    // Health check
+    // Health check (public, already past auth via PUBLIC_PATHS)
     if (url.pathname === "/api/health/ping") {
-      return Response.json({
+      const response = Response.json({
         status: "ok",
         uptime: process.uptime(),
         wsClients: clientCount(),
         timestamp: new Date().toISOString(),
-      }, { headers });
+      });
+      return securityHeaders(req, response);
     }
 
     // Unknown API route
     if (url.pathname.startsWith("/api/")) {
-      return apiError("NOT_FOUND", `Unknown endpoint: ${url.pathname}`, "router", 404);
+      return securityHeaders(req, apiError("NOT_FOUND", `Unknown endpoint: ${url.pathname}`, "router", 404));
     }
 
     // SPA fallback: serve client build
@@ -142,12 +167,16 @@ const server = Bun.serve({
   },
 });
 
+const authMode = config.dashboardToken ? "token" : config.localhostBypass ? "localhost-only" : "open";
+
 console.log(`
   AiDevOps Dashboard Server
   -------------------------
-  HTTP:      http://localhost:${server.port}
-  WebSocket: ws://localhost:${server.port}/ws
+  HTTP:      http://0.0.0.0:${server.port}
+  WebSocket: ws://0.0.0.0:${server.port}/ws
   Routes:    ${Object.keys(ROUTES).length} endpoints + /api/health/ping
+  Auth:      ${authMode} (localhost bypass: ${config.localhostBypass})
+  Rate limit: ${config.readRateLimit} read/min, 30 write/min
   GitHub:    ${config.githubToken ? "configured" : "not configured"}
   VPS:       ${config.enableVPS && config.vpsHost ? config.vpsHost : "disabled"}
   Ollama:    ${config.ollamaHost}

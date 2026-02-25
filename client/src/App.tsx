@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { CommandPalette } from "@/components/layout/CommandPalette";
+import { LoginGate } from "@/components/auth/LoginGate";
 import { OverviewPage } from "@/pages/OverviewPage";
 import { ProjectsPage } from "@/pages/ProjectsPage";
 import { KanbanPage } from "@/pages/KanbanPage";
@@ -42,16 +43,18 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen overflow-hidden bg-[#0a0a0f] text-[#e4e4e7] font-[Plus_Jakarta_Sans]">
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <TopBar />
-          <main className="flex-1 overflow-y-auto">
-            <PageComponent />
-          </main>
+      <LoginGate>
+        <div className="flex h-screen overflow-hidden bg-[#0a0a0f] text-[#e4e4e7] font-[Plus_Jakarta_Sans]">
+          <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <TopBar />
+            <main className="flex-1 overflow-y-auto">
+              <PageComponent />
+            </main>
+          </div>
+          <CommandPalette onNavigate={(page) => setCurrentPage(page as Page)} />
         </div>
-        <CommandPalette onNavigate={(page) => setCurrentPage(page as Page)} />
-      </div>
+      </LoginGate>
     </TooltipProvider>
   );
 }
