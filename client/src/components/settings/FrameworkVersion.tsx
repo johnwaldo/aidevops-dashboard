@@ -1,5 +1,5 @@
 import { useApiData } from "@/hooks/useApiData";
-import { Check, ArrowUpCircle } from "lucide-react";
+import { Check, ArrowUpCircle, ExternalLink } from "lucide-react";
 import { LoadingPanel } from "@/components/shared/LoadingPanel";
 
 const dashboardVersion = __DASHBOARD_VERSION__;
@@ -32,14 +32,20 @@ export function FrameworkVersion() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-[#71717a]">Version</span>
-              <span className="text-xs font-mono text-[#e4e4e7] flex items-center gap-1.5">
+              <a
+                href="https://github.com/marcusquinn/aidevops"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono text-[#e4e4e7] flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+              >
                 {version.installed}
                 {!version.updateAvailable ? (
                   <Check className="h-3.5 w-3.5 text-emerald-400" />
                 ) : (
                   <ArrowUpCircle className="h-3.5 w-3.5 text-amber-400" />
                 )}
-              </span>
+                <ExternalLink className="h-3 w-3 text-[#3f3f46]" />
+              </a>
             </div>
             {version.updateAvailable && (
               <div className="flex items-center justify-between">
@@ -49,7 +55,15 @@ export function FrameworkVersion() {
             )}
             <div className="flex items-center justify-between">
               <span className="text-xs text-[#71717a]">Dashboard</span>
-              <span className="text-xs font-mono text-cyan-400">v{dashboardVersion}</span>
+              <a
+                href="https://github.com/johnwaldo/aidevops-dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono text-cyan-400 flex items-center gap-1.5 hover:text-cyan-300 transition-colors"
+              >
+                v{dashboardVersion}
+                <ExternalLink className="h-3 w-3 text-[#3f3f46]" />
+              </a>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[#71717a]">Repository</span>
