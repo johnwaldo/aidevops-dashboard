@@ -232,4 +232,4 @@ Matrix communications hub and domain-specific operational panels:
 
 ## License
 
-Private repository.
+[MIT](LICENSE)

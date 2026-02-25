@@ -1,7 +1,7 @@
 {
   "name": "aidevops-dashboard",
   "version": "1.0.0",
-  "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n server,client -c cyan,magenta \"bun run server:dev\" \"bun run client:dev\"",
