@@ -66,6 +66,8 @@ export function NeedsList() {
                       age={need.createdAt}
                       project=""
                       impact={need.description}
+                      url={need.url}
+                      onDismissed={refresh}
                     />
                   ))}
                 </CollapsibleContent>

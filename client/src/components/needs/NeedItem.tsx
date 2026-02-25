@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX, X, BellOff } from "lucide-react";
+import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX, X, BellOff, ExternalLink, RotateCcw } from "lucide-react";
 import { PriorityDot } from "@/components/shared/PriorityDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ interface NeedItemProps {
   age: string;
   project: string;
   impact: string;
+  url?: string | null;
   onDismissed?: () => void;
 }
 
@@ -55,10 +56,19 @@ const snoozeOptions = [
   { label: "7 days", value: "7d" },
 ];
 
-export function NeedItem({ id, type, priority, title, source, age, project, impact, onDismissed }: NeedItemProps) {
+export function NeedItem({ id, type, priority, title, source, age, project, impact, url, onDismissed }: NeedItemProps) {
   const [dismissed, setDismissed] = useState(false);
   const [showSnooze, setShowSnooze] = useState(false);
   const { showToast } = useToast();
+
+  const rerunAction = useAction({
+    endpoint: "/api/actions/github/workflow/rerun",
+    onSuccess: () => {
+      showToast("success", "Workflow re-run triggered");
+      onDismissed?.();
+    },
+    onError: (err) => showToast("error", `Re-run failed: ${err}`),
+  });
 
   const dismissAction = useAction({
     endpoint: "/api/actions/needs/dismiss",
@@ -104,6 +114,58 @@ export function NeedItem({ id, type, priority, title, source, age, project, impa
           <p className="text-xs text-amber-400/70 mt-1.5">{impact}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 relative">
+          {/* Type-specific primary action */}
+          {type === "review" && url && (
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-cyan-400/30 text-cyan-400 hover:text-[#e4e4e7] hover:bg-cyan-400/10 gap-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Review
+              </Button>
+            </a>
+          )}
+          {type === "ci-failure" && url && (
+            <ConfirmDialog
+              title="Re-run failed workflow"
+              description={`Re-run the failed CI workflow? This will trigger a new run on GitHub Actions.`}
+              confirmLabel="Re-run"
+              onConfirm={async () => {
+                // Extract owner/repo/runId from the GitHub Actions URL
+                // URL format: https://github.com/{owner}/{repo}/actions/runs/{runId}
+                const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)/);
+                if (match) {
+                  await rerunAction.execute({ owner: match[1], repo: match[2], runId: Number(match[3]) });
+                } else {
+                  showToast("error", "Could not parse workflow URL");
+                }
+              }}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-rose-400/30 text-rose-400 hover:text-[#e4e4e7] hover:bg-rose-400/10 gap-1"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Re-run
+              </Button>
+            </ConfirmDialog>
+          )}
+          {(type === "ssl" || type === "expiring" || type === "security") && url && (
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-amber-400/30 text-amber-400 hover:text-[#e4e4e7] hover:bg-amber-400/10 gap-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View
+              </Button>
+            </a>
+          )}
+
           {/* Snooze button with dropdown */}
           <div className="relative">
             <Button

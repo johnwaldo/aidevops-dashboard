@@ -1,7 +1,11 @@
 import { useApiData } from "@/hooks/useApiData";
+import { useAction } from "@/hooks/useAction";
+import { useToast } from "@/components/actions/Toaster";
+import { ConfirmDialog } from "@/components/actions/ConfirmDialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { LoadingPanel, EmptyState } from "@/components/shared/LoadingPanel";
-import { CheckCircle, XCircle, Clock, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Clock, Activity, RotateCcw } from "lucide-react";
 
 interface CIData {
   repos: {
@@ -51,6 +55,42 @@ function conclusionIcon(conclusion: string | null, status: string) {
   return <Activity className="h-3.5 w-3.5 text-[#71717a]" />;
 }
 
+function RerunButton({ repo, run, onRerun }: { repo: string; run: { id: number; name: string; conclusion: string | null; status: string }; onRerun: () => void }) {
+  const { showToast } = useToast();
+  const [owner, repoName] = repo.split("/");
+
+  const rerunAction = useAction({
+    endpoint: "/api/actions/github/workflow/rerun",
+    onSuccess: () => {
+      showToast("success", `Re-running ${run.name}`);
+      onRerun();
+    },
+    onError: (err) => showToast("error", `Re-run failed: ${err}`),
+  });
+
+  if (run.conclusion !== "failure") return null;
+
+  return (
+    <ConfirmDialog
+      title="Re-run workflow"
+      description={`Re-run failed workflow "${run.name}" on ${repo}?`}
+      confirmLabel="Re-run"
+      onConfirm={async () => {
+        await rerunAction.execute({ owner, repo: repoName, runId: run.id });
+      }}
+    >
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-5 px-1.5 text-[10px] border-[#1e1e2e] text-rose-400 hover:text-[#e4e4e7] hover:border-rose-400/30 gap-1"
+      >
+        <RotateCcw className="h-2.5 w-2.5" />
+        Re-run
+      </Button>
+    </ConfirmDialog>
+  );
+}
+
 export function CICDStatus() {
   const { data: ci, loading, error, refresh } = useApiData<CIData>("ci", 120);
 
@@ -96,7 +136,7 @@ export function CICDStatus() {
                     <span className="text-[10px] font-mono text-[#71717a]">{formatDuration(repo.avgDurationSec)}</span>
                   )}
                 </div>
-                {/* Last 5 runs as dots */}
+                {/* Last 5 runs as dots + re-run for failures */}
                 <div className="flex items-center gap-1 ml-6">
                   {repo.runs.slice(0, 5).map((run) => (
                     <a key={run.id} href={run.url} target="_blank" rel="noopener noreferrer" title={`${run.name} (${run.conclusion ?? run.status})`}>
@@ -108,6 +148,13 @@ export function CICDStatus() {
                       }`} />
                     </a>
                   ))}
+                  {/* Re-run button for the most recent failed run */}
+                  {(() => {
+                    const failedRun = repo.runs.find((r) => r.conclusion === "failure");
+                    return failedRun ? (
+                      <RerunButton repo={repo.repo} run={failedRun} onRerun={refresh} />
+                    ) : null;
+                  })()}
                 </div>
               </div>
             ))}

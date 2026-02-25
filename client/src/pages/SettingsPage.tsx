@@ -2,6 +2,7 @@ import { FrameworkVersion } from "@/components/settings/FrameworkVersion";
 import { APIKeyStatus } from "@/components/settings/APIKeyStatus";
 import { MCPConfig } from "@/components/settings/MCPConfig";
 import { TailscaleStatus } from "@/components/settings/TailscaleStatus";
+import { DashboardConfig } from "@/components/settings/DashboardConfig";
 import { AuditLog } from "@/components/actions/AuditLog";
 
 export function SettingsPage() {
@@ -19,6 +20,8 @@ export function SettingsPage() {
       </div>
 
       <APIKeyStatus />
+
+      <DashboardConfig />
 
       <AuditLog />
     </div>
