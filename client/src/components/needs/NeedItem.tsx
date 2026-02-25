@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX, X, BellOff, ExternalLink, RotateCcw } from "lucide-react";
+import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX, X, BellOff, ExternalLink, RotateCcw, Download } from "lucide-react";
 import { PriorityDot } from "@/components/shared/PriorityDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   ssl: <Lock className="h-4 w-4" />,
   config: <Settings className="h-4 w-4" />,
   "ci-failure": <CircleX className="h-4 w-4" />,
+  "vps-updates": <Download className="h-4 w-4" />,
 };
 
 const typeLabels: Record<string, string> = {
@@ -33,6 +34,7 @@ const typeLabels: Record<string, string> = {
   ssl: "SSL",
   config: "Config",
   "ci-failure": "CI Failure",
+  "vps-updates": "Updates",
 };
 
 interface NeedItemProps {
@@ -68,6 +70,15 @@ export function NeedItem({ id, type, priority, title, source, age, project, impa
       onDismissed?.();
     },
     onError: (err) => showToast("error", `Re-run failed: ${err}`),
+  });
+
+  const vpsUpdateAction = useAction({
+    endpoint: "/api/actions/vps/update",
+    onSuccess: () => {
+      showToast("success", "VPS packages updated successfully");
+      onDismissed?.();
+    },
+    onError: (err) => showToast("error", `VPS update failed: ${err}`),
   });
 
   const dismissAction = useAction({
@@ -150,6 +161,25 @@ export function NeedItem({ id, type, priority, title, source, age, project, impa
               >
                 <RotateCcw className="h-3 w-3" />
                 Re-run
+              </Button>
+            </ConfirmDialog>
+          )}
+          {type === "vps-updates" && (
+            <ConfirmDialog
+              title="Apply VPS updates"
+              description={`Run apt-get upgrade on the VPS server. This will install all pending package updates. The server may need a restart if kernel updates are included.`}
+              confirmLabel="Apply Updates"
+              onConfirm={async () => {
+                await vpsUpdateAction.execute({ securityOnly: false });
+              }}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] border-amber-400/30 text-amber-400 hover:text-[#e4e4e7] hover:bg-amber-400/10 gap-1"
+              >
+                <Download className="h-3 w-3" />
+                Apply
               </Button>
             </ConfirmDialog>
           )}

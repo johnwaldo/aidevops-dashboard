@@ -4,7 +4,7 @@ import { apiResponse, apiError } from "./_helpers";
 
 export interface NeedItem {
   id: string;
-  type: "approval" | "review" | "failure" | "security" | "overdue" | "config" | "budget" | "ssl" | "expiring" | "ci-failure";
+  type: "approval" | "review" | "failure" | "security" | "overdue" | "config" | "budget" | "ssl" | "expiring" | "ci-failure" | "vps-updates";
   title: string;
   description: string;
   source: string;
@@ -233,7 +233,7 @@ export async function handleNeeds(_req: Request): Promise<Response> {
     }
 
     // --- VPS health ---
-    const vpsCache = cacheGet<{ status: string; hostname: string }>("healthVPS");
+    const vpsCache = cacheGet<{ status: string; hostname: string; pendingUpdates?: { total: number; security: number } }>("healthVPS");
     if (vpsCache && vpsCache.data) {
       const vps = vpsCache.data;
       if (vps.status === "critical" || vps.status === "unreachable") {
@@ -244,6 +244,22 @@ export async function handleNeeds(_req: Request): Promise<Response> {
           description: `VPS server is ${vps.status}`,
           source: "VPS Monitor",
           priority: "critical",
+          url: null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      // --- VPS pending updates ---
+      if (vps.pendingUpdates && vps.pendingUpdates.total > 0) {
+        const { total, security } = vps.pendingUpdates;
+        const hasSecurity = security > 0;
+        needs.push({
+          id: `need-${++needId}`,
+          type: "vps-updates",
+          title: `VPS: ${total} package update${total !== 1 ? "s" : ""} available${hasSecurity ? ` (${security} security)` : ""}`,
+          description: `${vps.hostname} has ${total} pending package update${total !== 1 ? "s" : ""}${hasSecurity ? ` including ${security} security update${security !== 1 ? "s" : ""}` : ""}`,
+          source: "VPS Monitor",
+          priority: hasSecurity ? "high" : "medium",
           url: null,
           createdAt: new Date().toISOString(),
         });

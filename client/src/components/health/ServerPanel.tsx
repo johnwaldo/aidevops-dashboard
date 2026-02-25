@@ -15,6 +15,7 @@ interface VpsData {
   disk: { used: number; total: number; pct: number };
   sshLatency: number;
   services: { name: string; status: string }[];
+  pendingUpdates?: { total: number; security: number };
 }
 
 export function ServerPanel() {
@@ -63,6 +64,20 @@ export function ServerPanel() {
               ))}
             </div>
           </div>
+
+          {vps.pendingUpdates && vps.pendingUpdates.total > 0 && (
+            <div className="rounded border border-amber-400/20 bg-amber-400/5 px-3 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 text-xs">&#9888;</span>
+                <span className="text-xs text-amber-300">
+                  {vps.pendingUpdates.total} update{vps.pendingUpdates.total !== 1 ? "s" : ""} available
+                  {vps.pendingUpdates.security > 0 && (
+                    <span className="text-rose-400 font-medium"> ({vps.pendingUpdates.security} security)</span>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </LoadingPanel>
