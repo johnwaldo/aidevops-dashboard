@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { getSecret } from "../secrets";
 
 export interface GitProject {
   name: string;
@@ -16,12 +16,13 @@ export interface GitProject {
 }
 
 async function ghApi<T>(path: string): Promise<T | null> {
-  if (!config.githubToken) return null;
+  const token = await getSecret("GITHUB_TOKEN");
+  if (!token) return null;
 
   try {
     const res = await fetch(`https://api.github.com${path}`, {
       headers: {
-        Authorization: `Bearer ${config.githubToken}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
@@ -75,7 +76,7 @@ interface GHPull {
 }
 
 export async function collectGitProjects(): Promise<GitProject[]> {
-  if (!config.githubToken) {
+  if (!(await getSecret("GITHUB_TOKEN"))) {
     console.warn("[git] No GitHub token configured, skipping");
     return [];
   }

@@ -1,4 +1,5 @@
 import { config } from "../config";
+import { getSecret } from "../secrets";
 
 export interface UptimeMonitor {
   name: string;
@@ -31,12 +32,13 @@ interface UpdownMetrics {
   requests: { samples: number; failures: number; satisfied: number; tolerated: number; by_response_time: Record<string, number> };
 }
 
-async function fetchMetrics(token: string, from: string, to: string): Promise<UpdownMetrics | null> {
-  if (!config.updownApiKey) return null;
+async function fetchMetrics(checkToken: string, from: string, to: string): Promise<UpdownMetrics | null> {
+  const apiKey = await getSecret("UPDOWN_API_KEY");
+  if (!apiKey) return null;
 
   try {
-    const res = await fetch(`https://updown.io/api/checks/${token}/metrics?from=${from}&to=${to}`, {
-      headers: { "X-API-Key": config.updownApiKey },
+    const res = await fetch(`https://updown.io/api/checks/${checkToken}/metrics?from=${from}&to=${to}`, {
+      headers: { "X-API-Key": apiKey },
       signal: AbortSignal.timeout(10000),
     });
 
@@ -48,13 +50,14 @@ async function fetchMetrics(token: string, from: string, to: string): Promise<Up
 }
 
 export async function collectUptimeMonitors(): Promise<UptimeMonitor[]> {
-  if (!config.enableUptime || !config.updownApiKey) {
+  const apiKey = await getSecret("UPDOWN_API_KEY");
+  if (!config.enableUptime || !apiKey) {
     return [];
   }
 
   try {
     const res = await fetch("https://updown.io/api/checks", {
-      headers: { "X-API-Key": config.updownApiKey },
+      headers: { "X-API-Key": apiKey },
       signal: AbortSignal.timeout(10000),
     });
 

@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { getSecret } from "../secrets";
 
 export interface WorkflowRun {
   id: number;
@@ -51,12 +51,13 @@ interface GHRunsResponse {
 }
 
 async function ghApi<T>(path: string): Promise<T | null> {
-  if (!config.githubToken) return null;
+  const token = await getSecret("GITHUB_TOKEN");
+  if (!token) return null;
 
   try {
     const res = await fetch(`https://api.github.com${path}`, {
       headers: {
-        Authorization: `Bearer ${config.githubToken}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
@@ -99,7 +100,7 @@ function parseRun(run: GHWorkflowRun, repoName: string): WorkflowRun {
 }
 
 export async function collectCIStatus(): Promise<CIStatus> {
-  if (!config.githubToken) {
+  if (!(await getSecret("GITHUB_TOKEN"))) {
     return { repos: [], running: [], recentFailures: [], summary: { totalRuns: 0, successRate: 0, avgDurationSec: 0, failureCount: 0 } };
   }
 

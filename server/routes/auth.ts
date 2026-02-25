@@ -2,7 +2,7 @@ import { authenticate } from "../middleware/auth";
 import { apiResponse } from "./_helpers";
 
 export async function handleAuthStatus(req: Request): Promise<Response> {
-  const auth = authenticate(req);
+  const auth = await authenticate(req);
 
   return apiResponse(
     {

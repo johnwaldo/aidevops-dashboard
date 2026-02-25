@@ -3,7 +3,7 @@ import { writeAuthMiddleware } from "../../middleware/write-auth";
 import { apiResponse, apiError } from "../_helpers";
 
 export async function handleAgentDispatch(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();

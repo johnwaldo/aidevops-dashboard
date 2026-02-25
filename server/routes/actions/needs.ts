@@ -57,7 +57,7 @@ export function isNeedHidden(needId: string): boolean {
 }
 
 export async function handleNeedDismiss(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();
@@ -113,7 +113,7 @@ export async function handleNeedDismiss(req: Request): Promise<Response> {
 }
 
 export async function handleNeedSnooze(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   const start = Date.now();

@@ -1,4 +1,5 @@
 import { config } from "../config";
+import { getSecret } from "../secrets";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -6,7 +7,7 @@ export interface AuthResult {
   method: "localhost" | "tailscale" | "token" | "none";
 }
 
-export function authenticate(req: Request, remoteIp?: string): AuthResult {
+export async function authenticate(req: Request, remoteIp?: string): Promise<AuthResult> {
   const ip = remoteIp ?? extractIp(req);
 
   // Tier 1: Localhost bypass
@@ -29,7 +30,8 @@ export function authenticate(req: Request, remoteIp?: string): AuthResult {
   const authHeader = req.headers.get("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    if (config.dashboardToken && token === config.dashboardToken) {
+    const dashboardToken = await getSecret("DASHBOARD_TOKEN");
+    if (dashboardToken && token === dashboardToken) {
       return { authenticated: true, user: "api-token", method: "token" };
     }
   }
@@ -57,7 +59,7 @@ const PUBLIC_PATHS = new Set([
   "/api/auth/status",
 ]);
 
-export function authMiddleware(req: Request, remoteIp?: string): Response | null {
+export async function authMiddleware(req: Request, remoteIp?: string): Promise<Response | null> {
   const path = new URL(req.url).pathname;
 
   // Public endpoints — no auth required
@@ -66,7 +68,7 @@ export function authMiddleware(req: Request, remoteIp?: string): Response | null
   // Static assets and SPA fallback — no auth (Tailscale Serve handles network-level access)
   if (!path.startsWith("/api/") && !path.startsWith("/ws")) return null;
 
-  const auth = authenticate(req, remoteIp);
+  const auth = await authenticate(req, remoteIp);
   if (!auth.authenticated) {
     return Response.json(
       { error: { code: "UNAUTHORIZED", message: "Authentication required", method: auth.method } },

@@ -5,8 +5,8 @@ import { authenticate, type AuthResult } from "./auth";
  * - Authentication required (no anonymous)
  * - Extracts and returns auth result for audit logging
  */
-export function writeAuthMiddleware(req: Request, remoteIp?: string): { blocked: Response | null; auth: AuthResult } {
-  const auth = authenticate(req, remoteIp);
+export async function writeAuthMiddleware(req: Request, remoteIp?: string): Promise<{ blocked: Response | null; auth: AuthResult }> {
+  const auth = await authenticate(req, remoteIp);
 
   if (!auth.authenticated) {
     return {
