@@ -5,7 +5,7 @@ import { cacheInvalidatePrefix } from "../../cache/store";
 import { apiResponse, apiError } from "../_helpers";
 
 export async function handleVPSUpdate(req: Request): Promise<Response> {
-  const { blocked, auth } = writeAuthMiddleware(req);
+  const { blocked, auth } = await writeAuthMiddleware(req);
   if (blocked) return blocked;
 
   if (!config.enableVPS || !config.vpsHost) {
