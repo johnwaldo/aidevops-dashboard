@@ -17,6 +17,10 @@ import { handlePageSpeed } from "./routes/pagespeed";
 import { handleAuthStatus } from "./routes/auth";
 import { handleDiagnostics } from "./health/diagnostics";
 import { handleTaskMove, handleTaskCreate, handleTaskUpdate } from "./routes/actions/tasks";
+import { handlePRApprove, handlePRMerge, handleWorkflowRerun } from "./routes/actions/github";
+import { handleAgentDispatch } from "./routes/actions/agents";
+import { handleSettingsGet, handleBudgetUpdate, handleAlertUpdate, handleCollectorToggle, handleRefreshIntervalUpdate } from "./routes/actions/settings";
+import { handleNeedDismiss, handleNeedSnooze } from "./routes/actions/needs";
 import { handleAudit } from "./routes/audit";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
@@ -83,10 +87,26 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/pagespeed": handlePageSpeed,
   // Phase 4 — operational
   "/api/diagnostics": handleDiagnostics,
-  // Phase 5 — write operations
+  // Phase 5 — write operations (tasks)
   "/api/actions/tasks/move": handleTaskMove,
   "/api/actions/tasks/create": handleTaskCreate,
   "/api/actions/tasks/update": handleTaskUpdate,
+  // Phase 5 — write operations (github)
+  "/api/actions/github/pr/approve": handlePRApprove,
+  "/api/actions/github/pr/merge": handlePRMerge,
+  "/api/actions/github/workflow/rerun": handleWorkflowRerun,
+  // Phase 5 — write operations (agents)
+  "/api/actions/agents/dispatch": handleAgentDispatch,
+  // Phase 5 — write operations (settings)
+  "/api/actions/settings": handleSettingsGet,
+  "/api/actions/settings/budget": handleBudgetUpdate,
+  "/api/actions/settings/alerts": handleAlertUpdate,
+  "/api/actions/settings/collectors": handleCollectorToggle,
+  "/api/actions/settings/refresh-intervals": handleRefreshIntervalUpdate,
+  // Phase 5 — write operations (needs)
+  "/api/actions/needs/dismiss": handleNeedDismiss,
+  "/api/actions/needs/snooze": handleNeedSnooze,
+  // Phase 5 — audit
   "/api/audit": handleAudit,
 };
 

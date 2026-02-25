@@ -1,7 +1,11 @@
-import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX } from "lucide-react";
+import { useState } from "react";
+import { GitPullRequest, Clock, ShieldAlert, AlertTriangle, XCircle, Bot, CalendarClock, DollarSign, Lock, Settings, CircleX, X, BellOff } from "lucide-react";
 import { PriorityDot } from "@/components/shared/PriorityDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/actions/ConfirmDialog";
+import { useAction } from "@/hooks/useAction";
+import { useToast } from "@/components/actions/Toaster";
 
 const typeIcons: Record<string, React.ReactNode> = {
   review: <GitPullRequest className="h-4 w-4" />,
@@ -40,9 +44,46 @@ interface NeedItemProps {
   age: string;
   project: string;
   impact: string;
+  onDismissed?: () => void;
 }
 
-export function NeedItem({ type, priority, title, source, age, project, impact }: NeedItemProps) {
+const snoozeOptions = [
+  { label: "1 hour", value: "1h" },
+  { label: "4 hours", value: "4h" },
+  { label: "1 day", value: "1d" },
+  { label: "3 days", value: "3d" },
+  { label: "7 days", value: "7d" },
+];
+
+export function NeedItem({ id, type, priority, title, source, age, project, impact, onDismissed }: NeedItemProps) {
+  const [dismissed, setDismissed] = useState(false);
+  const [showSnooze, setShowSnooze] = useState(false);
+  const { showToast } = useToast();
+
+  const dismissAction = useAction({
+    endpoint: "/api/actions/needs/dismiss",
+    onSuccess: () => {
+      setDismissed(true);
+      showToast("success", "Need dismissed");
+      onDismissed?.();
+    },
+    onError: (err) => showToast("error", `Failed to dismiss: ${err}`),
+  });
+
+  const snoozeAction = useAction({
+    endpoint: "/api/actions/needs/snooze",
+    onSuccess: () => {
+      setDismissed(true);
+      showToast("info", "Need snoozed");
+      onDismissed?.();
+    },
+    onError: (err) => showToast("error", `Failed to snooze: ${err}`),
+  });
+
+  if (dismissed) return null;
+
+  const needId = `need-${id}-${type}`;
+
   return (
     <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4 transition-all hover:border-[#2e2e3e] group">
       <div className="flex items-start gap-3">
@@ -62,13 +103,51 @@ export function NeedItem({ type, priority, title, source, age, project, impact }
           </div>
           <p className="text-xs text-amber-400/70 mt-1.5">{impact}</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="outline" size="sm" className="h-7 text-[10px] border-[#1e1e2e] text-[#71717a] hover:text-[#e4e4e7] hover:border-[#2e2e3e]">
-            Review
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 text-[10px] border-[#1e1e2e] text-[#71717a] hover:text-[#e4e4e7] hover:border-[#2e2e3e]">
-            Snooze
-          </Button>
+        <div className="flex items-center gap-1.5 shrink-0 relative">
+          {/* Snooze button with dropdown */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] border-[#1e1e2e] text-[#71717a] hover:text-[#e4e4e7] hover:border-[#2e2e3e]"
+              onClick={() => setShowSnooze(!showSnooze)}
+            >
+              <BellOff className="h-3 w-3 mr-1" />
+              Snooze
+            </Button>
+            {showSnooze && (
+              <div className="absolute right-0 top-full mt-1 z-10 rounded-md border border-[#1e1e2e] bg-[#111118] shadow-lg py-1 min-w-[120px]">
+                {snoozeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className="w-full text-left px-3 py-1.5 text-[10px] text-[#71717a] hover:text-[#e4e4e7] hover:bg-[#1e1e2e] transition-colors"
+                    onClick={() => {
+                      setShowSnooze(false);
+                      snoozeAction.execute({ needId, duration: opt.value });
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dismiss button */}
+          <ConfirmDialog
+            title="Dismiss need"
+            description={`Permanently dismiss "${title}". It won't appear again.`}
+            confirmLabel="Dismiss"
+            onConfirm={() => dismissAction.execute({ needId })}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] border-[#1e1e2e] text-[#71717a] hover:text-rose-400 hover:border-rose-400/30"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </ConfirmDialog>
         </div>
       </div>
     </div>
