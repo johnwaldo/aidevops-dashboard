@@ -70,4 +70,15 @@ cd "$SCRIPT_DIR"
 NEW_VER=$(grep '"version"' package.json | head -1 | sed 's/.*: *"\(.*\)".*/\1/')
 echo ""
 echo "=== Updated to v${NEW_VER} ==="
-echo "Restart the server to apply: bun run dev"
+
+# Restart the launchd service if it's running (so new code loads immediately)
+LABEL="com.aidevops.dashboard"
+# Use variable to avoid SIGPIPE (141) when grep -q exits early under set -o pipefail
+_launchd_output=$(launchctl list 2>/dev/null) || true
+if echo "$_launchd_output" | grep -qF "$LABEL"; then
+	echo "Restarting dashboard service..."
+	launchctl kickstart -k "gui/$(id -u)/${LABEL}"
+	echo "Service restarted with v${NEW_VER}"
+else
+	echo "LaunchAgent not loaded — restart manually: ./dashboard.sh restart"
+fi

@@ -2,13 +2,11 @@ import { join } from "path";
 import { cacheGet, cacheSet, cacheInvalidate } from "../cache/store";
 import { logAudit } from "../writers/audit-log";
 import { writeAuthMiddleware } from "../middleware/write-auth";
-import { loadSettings } from "../writers/config-writer";
 import { logger } from "../health/logger";
 import { apiResponse, apiError } from "./_helpers";
 
 const REPO_DIR = join(import.meta.dir, "../..");
-const AUTO_UPDATE_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
-let autoUpdateTimer: ReturnType<typeof setInterval> | null = null;
+const LABEL = "com.aidevops.dashboard";
 
 export interface UpdateStatus {
   updateAvailable: boolean;
@@ -29,6 +27,16 @@ async function runScript(args: string[]): Promise<{ stdout: string; stderr: stri
   const stderr = await new Response(proc.stderr).text();
   const exitCode = await proc.exited;
   return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode };
+}
+
+/** Check if the LaunchAgent is loaded */
+async function isLaunchdManaged(): Promise<boolean> {
+  try {
+    const { stdout } = await runScript(["launchctl", "list"]);
+    return stdout.includes(LABEL);
+  } catch {
+    return false;
+  }
 }
 
 export async function handleUpdateCheck(_req: Request): Promise<Response> {
@@ -97,11 +105,16 @@ export async function handleUpdateApply(req: Request): Promise<Response> {
     const versionMatch = stdout.match(/Updated to v([\d.]+)/);
     const newVersion = versionMatch?.[1] ?? "unknown";
 
+    // update.sh now handles the launchctl restart itself, but if the server
+    // is running outside launchd (dev mode), the caller still needs to know
+    const managed = await isLaunchdManaged();
+
     return apiResponse({
       success: true,
       newVersion,
       output: stdout.split("\n").slice(-5),
-      restartRequired: true,
+      restartRequired: !managed,
+      launchdRestart: managed,
     }, "actions/update", 0);
   } catch (err) {
     logAudit({
@@ -116,86 +129,5 @@ export async function handleUpdateApply(req: Request): Promise<Response> {
     });
 
     return apiError("UPDATE_ERROR", String(err instanceof Error ? err.message : err), "actions/update", 502);
-  }
-}
-
-async function autoUpdateCheck(): Promise<void> {
-  const settings = loadSettings();
-  if (settings.updateMode !== "auto") return;
-
-  try {
-    const { stdout } = await runScript([join(REPO_DIR, "update.sh"), "--check"]);
-    const status: UpdateStatus = JSON.parse(stdout);
-
-    if (!status.updateAvailable) return;
-
-    logger.info("Auto-update: update available", {
-      current: status.currentVersion,
-      latest: status.latestVersion,
-      commits: status.commitsBehind,
-    });
-
-    // Apply the update
-    const start = Date.now();
-    const result = await runScript([join(REPO_DIR, "update.sh")]);
-
-    if (result.exitCode === 0) {
-      const versionMatch = result.stdout.match(/Updated to v([\d.]+)/);
-      logger.info("Auto-update: applied successfully", {
-        newVersion: versionMatch?.[1] ?? "unknown",
-        durationMs: Date.now() - start,
-      });
-
-      logAudit({
-        ts: new Date().toISOString(),
-        action: "dashboard.auto-update",
-        target: "aidevops-dashboard",
-        params: { from: status.currentVersion, to: status.latestVersion },
-        user: "auto-update",
-        result: "success",
-        durationMs: Date.now() - start,
-      });
-
-      cacheInvalidate("updateCheck");
-    } else {
-      logger.error("Auto-update: failed", { stderr: result.stderr, exitCode: result.exitCode });
-
-      logAudit({
-        ts: new Date().toISOString(),
-        action: "dashboard.auto-update",
-        target: "aidevops-dashboard",
-        params: { from: status.currentVersion, to: status.latestVersion },
-        user: "auto-update",
-        result: "failure",
-        error: result.stderr || `exit code ${result.exitCode}`,
-        durationMs: Date.now() - start,
-      });
-    }
-  } catch (err) {
-    logger.error("Auto-update: check failed", { error: String(err) });
-  }
-}
-
-export function startAutoUpdateTimer(): void {
-  if (autoUpdateTimer) return;
-
-  const settings = loadSettings();
-  logger.info(`Auto-update: mode=${settings.updateMode}, interval=12h`);
-
-  // Run first check after 1 minute (let server fully start)
-  setTimeout(() => {
-    autoUpdateCheck();
-  }, 60_000);
-
-  // Then every 12 hours
-  autoUpdateTimer = setInterval(() => {
-    autoUpdateCheck();
-  }, AUTO_UPDATE_INTERVAL_MS);
-}
-
-export function stopAutoUpdateTimer(): void {
-  if (autoUpdateTimer) {
-    clearInterval(autoUpdateTimer);
-    autoUpdateTimer = null;
   }
 }
