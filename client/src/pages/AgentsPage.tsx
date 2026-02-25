@@ -23,7 +23,7 @@ export function AgentsPage() {
   const mcpCount = new Set((agentsData?.agents ?? []).flatMap((a) => a.mcps)).size;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold font-[Plus_Jakarta_Sans]">Agents</h1>
         <p className="text-sm text-[#71717a] mt-1">AI agent roster, MCP servers, and configuration.</p>
@@ -31,8 +31,8 @@ export function AgentsPage() {
 
       <AgentRoster />
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
           <MCPStatus />
         </div>
         <div className="rounded-md border border-[#1e1e2e] bg-[#111118] p-4">
