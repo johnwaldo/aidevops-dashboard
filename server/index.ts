@@ -15,18 +15,41 @@ import { handleAlerts } from "./routes/alerts";
 import { handleCI } from "./routes/ci";
 import { handlePageSpeed } from "./routes/pagespeed";
 import { handleAuthStatus } from "./routes/auth";
+import { handleDiagnostics } from "./health/diagnostics";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
+import { startCacheCleanup } from "./cache/store";
+import { logger } from "./health/logger";
 import { apiError } from "./routes/_helpers";
 import { authMiddleware } from "./middleware/auth";
 import { rateLimitMiddleware } from "./middleware/rate-limit";
 import { securityHeaders, handlePreflight } from "./middleware/security";
 
+// Global error handlers — prevent crashes from unhandled errors
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught exception", { error: String(err), stack: (err as Error).stack });
+});
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason: String(reason) });
+});
+
 // Load secrets before starting
 await loadSecrets();
 
-// Start file watchers
-startFileWatchers();
+// Start subsystems with resilience — failures don't prevent server startup
+const startupResults = await Promise.allSettled([
+  Promise.resolve(startFileWatchers()),
+  Promise.resolve(startCacheCleanup()),
+]);
+
+for (const [i, result] of startupResults.entries()) {
+  const names = ["file-watchers", "cache-cleanup"];
+  if (result.status === "rejected") {
+    logger.error(`Startup: ${names[i]} failed`, { error: String(result.reason) });
+  } else {
+    logger.info(`Startup: ${names[i]} started`);
+  }
+}
 
 const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   // Auth
@@ -56,6 +79,8 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/alerts": handleAlerts,
   "/api/ci": handleCI,
   "/api/pagespeed": handlePageSpeed,
+  // Phase 4 — operational
+  "/api/diagnostics": handleDiagnostics,
 };
 
 function extractRemoteIp(req: Request, server: { requestIP?: (req: Request) => { address: string } | null }): string {
@@ -155,11 +180,11 @@ const server = Bun.serve({
   websocket: {
     open(ws) {
       addClient(ws);
-      console.log(`[ws] Client connected (${clientCount()} total)`);
+      logger.info(`WebSocket client connected (${clientCount()} total)`);
     },
     close(ws) {
       removeClient(ws);
-      console.log(`[ws] Client disconnected (${clientCount()} total)`);
+      logger.info(`WebSocket client disconnected (${clientCount()} total)`);
     },
     message(_ws, _message) {
       // Client messages not used yet — future: subscribe to specific channels
@@ -169,6 +194,20 @@ const server = Bun.serve({
 
 const authMode = config.dashboardToken ? "token" : config.localhostBypass ? "localhost-only" : "open";
 
+logger.info("AiDevOps Dashboard Server started", {
+  http: `http://0.0.0.0:${server.port}`,
+  ws: `ws://0.0.0.0:${server.port}/ws`,
+  routes: Object.keys(ROUTES).length + 1, // +1 for /api/health/ping
+  auth: authMode,
+  localhostBypass: config.localhostBypass,
+  readRateLimit: config.readRateLimit,
+  github: config.githubToken ? "configured" : "not configured",
+  vps: config.enableVPS && config.vpsHost ? config.vpsHost : "disabled",
+  ollama: config.ollamaHost,
+  uptime: config.updownApiKey ? "configured" : "not configured",
+});
+
+// Also print to console for dev visibility
 console.log(`
   AiDevOps Dashboard Server
   -------------------------
@@ -176,9 +215,4 @@ console.log(`
   WebSocket: ws://0.0.0.0:${server.port}/ws
   Routes:    ${Object.keys(ROUTES).length} endpoints + /api/health/ping
   Auth:      ${authMode} (localhost bypass: ${config.localhostBypass})
-  Rate limit: ${config.readRateLimit} read/min, 30 write/min
-  GitHub:    ${config.githubToken ? "configured" : "not configured"}
-  VPS:       ${config.enableVPS && config.vpsHost ? config.vpsHost : "disabled"}
-  Ollama:    ${config.ollamaHost}
-  Uptime:    ${config.updownApiKey ? "configured" : "not configured"}
 `);

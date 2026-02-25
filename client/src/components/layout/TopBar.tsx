@@ -1,8 +1,13 @@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useApiData } from "@/hooks/useApiData";
-import { ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle, Wifi, WifiOff, Loader2 } from "lucide-react";
+import type { ConnectionStatus } from "@/hooks/useWebSocket";
 
-export function TopBar() {
+interface TopBarProps {
+  wsStatus?: ConnectionStatus;
+}
+
+export function TopBar({ wsStatus = "connected" }: TopBarProps) {
   const { data: health } = useApiData<{ local: { status: string } | null; vps: { status: string } | null }>("health", 15);
   const { data: tokens } = useApiData<{ budget: { today: number; currentMonth: number } }>("tokens", 300);
   const { data: needs } = useApiData<unknown[]>("needs", 10);
@@ -56,6 +61,15 @@ export function TopBar() {
             {needsCount}
           </span>
           <span className="text-xs text-[#71717a]">needs</span>
+        </div>
+        <div className="h-4 w-px bg-[#1e1e2e]" />
+        <div className="flex items-center gap-1">
+          {wsStatus === "connected" && <Wifi className="h-3.5 w-3.5 text-emerald-400" />}
+          {wsStatus === "reconnecting" && <Loader2 className="h-3.5 w-3.5 text-amber-400 animate-spin" />}
+          {wsStatus === "disconnected" && <WifiOff className="h-3.5 w-3.5 text-rose-400" />}
+          <span className="text-[10px] font-mono text-[#71717a] hidden lg:inline">
+            {wsStatus === "connected" ? "Live" : wsStatus === "reconnecting" ? "Reconnecting" : "Offline"}
+          </span>
         </div>
       </div>
     </header>
