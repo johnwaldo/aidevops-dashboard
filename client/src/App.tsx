@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/actions/Toaster";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -49,23 +50,25 @@ function App() {
 
   return (
     <TooltipProvider>
-      <LoginGate>
-        <div className="flex h-screen overflow-hidden bg-[#0a0a0f] text-[#e4e4e7] font-[Plus_Jakarta_Sans]">
-          {/* Desktop sidebar — hidden on mobile */}
-          <div className="hidden md:block">
-            <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <ToastProvider>
+        <LoginGate>
+          <div className="flex h-screen overflow-hidden bg-[#0a0a0f] text-[#e4e4e7] font-[Plus_Jakarta_Sans]">
+            {/* Desktop sidebar — hidden on mobile */}
+            <div className="hidden md:block">
+              <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+            </div>
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <TopBar wsStatus={wsStatus} />
+              <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+                <PageComponent />
+              </main>
+            </div>
+            {/* Mobile bottom nav — hidden on desktop */}
+            <MobileNav currentPage={currentPage} onNavigate={setCurrentPage} needsCount={needsCount} />
+            <CommandPalette onNavigate={(page) => setCurrentPage(page as Page)} />
           </div>
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <TopBar wsStatus={wsStatus} />
-            <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-              <PageComponent />
-            </main>
-          </div>
-          {/* Mobile bottom nav — hidden on desktop */}
-          <MobileNav currentPage={currentPage} onNavigate={setCurrentPage} needsCount={needsCount} />
-          <CommandPalette onNavigate={(page) => setCurrentPage(page as Page)} />
-        </div>
-      </LoginGate>
+        </LoginGate>
+      </ToastProvider>
     </TooltipProvider>
   );
 }
