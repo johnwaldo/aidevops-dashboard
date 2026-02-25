@@ -15,27 +15,22 @@ export async function handleSettings(_req: Request): Promise<Response> {
     const status = await getAidevopsStatus();
 
     // Check which API keys are configured (names only, never values)
-    const [hasGithub, hasUpdown] = await Promise.all([
-      hasSecret("GITHUB_TOKEN"),
-      hasSecret("UPDOWN_API_KEY"),
-    ]);
-    const apiKeys = [
-      { service: "GitHub", configured: hasGithub, status: hasGithub ? "valid" : "missing" },
-      { service: "updown.io", configured: hasUpdown, status: hasUpdown ? "valid" : "missing" },
+    // Uses hasSecret() which checks: gopass → gh auth → env var
+    const secretChecks = [
+      { secret: "GITHUB_TOKEN", service: "GitHub" },
+      { secret: "UPDOWN_API_KEY", service: "updown.io" },
+      { secret: "ANTHROPIC_API_KEY", service: "Anthropic" },
+      { secret: "AHREFS_API_KEY", service: "Ahrefs" },
+      { secret: "DATAFORSEO_LOGIN", service: "DataForSEO" },
+      { secret: "SONARCLOUD_TOKEN", service: "SonarCloud" },
     ];
 
-    // Try to detect more keys from environment
-    const envKeys = [
-      { env: "ANTHROPIC_API_KEY", service: "Anthropic" },
-      { env: "AHREFS_API_KEY", service: "Ahrefs" },
-      { env: "DATAFORSEO_LOGIN", service: "DataForSEO" },
-      { env: "SONARCLOUD_TOKEN", service: "SonarCloud" },
-    ];
-
-    for (const { env, service } of envKeys) {
-      const configured = !!process.env[env];
-      apiKeys.push({ service, configured, status: configured ? "valid" : "missing" });
-    }
+    const results = await Promise.all(secretChecks.map((s) => hasSecret(s.secret)));
+    const apiKeys = secretChecks.map((s, i) => ({
+      service: s.service,
+      configured: results[i],
+      status: results[i] ? "valid" : "missing",
+    }));
 
     const result = {
       framework: {
