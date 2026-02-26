@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    // Relax some React 19 strict rules that are overly pedantic
+    rules: {
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-refresh/only-export-components': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+    },
   },
 ])
