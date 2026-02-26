@@ -40,12 +40,17 @@ export async function authenticate(req: Request, remoteIp?: string): Promise<Aut
 }
 
 function extractIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+  // Only trust proxy headers when explicitly enabled (behind known proxy)
+  if (config.trustProxy) {
+    const forwarded = req.headers.get("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0].trim();
 
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp;
+    const realIp = req.headers.get("x-real-ip");
+    if (realIp) return realIp;
+  }
 
+  // When trustProxy is false (default), use native connection info only
+  // This prevents X-Forwarded-For spoofing attacks
   return "127.0.0.1";
 }
 

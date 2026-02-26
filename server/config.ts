@@ -59,6 +59,11 @@ export const config = {
   localhostBypass: process.env.DASHBOARD_LOCALHOST_BYPASS !== "false",
   allowedTailscaleUsers: (process.env.DASHBOARD_ALLOWED_USERS ?? "").split(",").filter(Boolean),
 
+  // Security
+  // Only trust proxy headers (X-Forwarded-For, X-Real-IP) when behind a known proxy
+  // Default false — only enable if behind Tailscale Serve or a trusted reverse proxy
+  trustProxy: process.env.DASHBOARD_TRUST_PROXY === "true",
+
   // Rate limiting
   readRateLimit: Number(process.env.DASHBOARD_READ_RATE_LIMIT ?? 100),
   wsMaxConnections: Number(process.env.DASHBOARD_WS_MAX ?? 5),

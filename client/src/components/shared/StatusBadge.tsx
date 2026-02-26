@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
-  status: "healthy" | "warning" | "critical" | "connected" | "disconnected" | "stopped" | "running" | "idle" | "up" | "down" | "passing" | "failing" | "none" | "active";
+  status: string;
   label?: string;
   className?: string;
 }

@@ -2,7 +2,6 @@ import { useApiData } from "@/hooks/useApiData";
 import { useAction } from "@/hooks/useAction";
 import { useToast } from "@/components/actions/Toaster";
 import { ConfirmDialog } from "@/components/actions/ConfirmDialog";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { LoadingPanel, EmptyState } from "@/components/shared/LoadingPanel";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock, Activity, RotateCcw } from "lucide-react";

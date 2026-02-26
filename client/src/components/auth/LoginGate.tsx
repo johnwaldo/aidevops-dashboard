@@ -9,7 +9,7 @@ interface LoginGateProps {
 }
 
 export function LoginGate({ children }: LoginGateProps) {
-  const { authenticated, loading, error, user, method, login } = useAuth();
+  const { authenticated, loading, error, login } = useAuth();
   const [token, setToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);

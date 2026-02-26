@@ -230,7 +230,9 @@ export function NeedItem({ id, type, priority, title, source, age, project, impa
             title="Dismiss need"
             description={`Permanently dismiss "${title}". It won't appear again.`}
             confirmLabel="Dismiss"
-            onConfirm={() => dismissAction.execute({ needId })}
+            onConfirm={async () => {
+              await dismissAction.execute({ needId });
+            }}
           >
             <Button
               variant="outline"

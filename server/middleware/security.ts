@@ -1,5 +1,14 @@
 import { config } from "../config";
 
+// Detect production environment
+const isProduction = process.env.NODE_ENV === "production" || process.env.DASHBOARD_ENV === "production";
+
+// Allowed origins in production (configure via environment variable)
+const PRODUCTION_ALLOWED_ORIGINS = (process.env.DASHBOARD_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
+
 function isTailscaleOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
@@ -7,6 +16,21 @@ function isTailscaleOrigin(origin: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  // Always allow Tailscale and localhost origins
+  if (isTailscaleOrigin(origin)) return true;
+
+  // In production, only allow explicitly configured origins
+  if (isProduction) {
+    return PRODUCTION_ALLOWED_ORIGINS.some(allowed =>
+      origin === allowed || origin.endsWith(`.${allowed}`)
+    );
+  }
+
+  // In development, allow localhost variants
+  return origin.includes("localhost") || origin.includes("127.0.0.1");
 }
 
 export function securityHeaders(req: Request, response: Response): Response {
@@ -21,12 +45,20 @@ export function securityHeaders(req: Request, response: Response): Response {
   if (!origin) {
     // No origin header — same-origin request or non-browser client
     response.headers.set("Access-Control-Allow-Origin", "*");
-  } else if (isTailscaleOrigin(origin) || origin.includes("localhost") || origin.includes("127.0.0.1")) {
+  } else if (isAllowedOrigin(origin)) {
+    // Known/allowed origin
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
   } else {
-    // Unknown origin — allow in dev, restrict in production
-    response.headers.set("Access-Control-Allow-Origin", origin);
+    // Unknown origin — reject in production, warn in dev
+    if (isProduction) {
+      // In production, don't expose the API to unknown origins
+      // Omit CORS headers entirely — browser will block cross-origin requests
+    } else {
+      // In development, allow but log warning
+      console.warn(`[SECURITY] Allowing unknown origin in development: ${origin}`);
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    }
   }
 
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
