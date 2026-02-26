@@ -21,9 +21,10 @@ export default defineConfig([
     },
     // Relax some React 19 strict rules that are overly pedantic
     rules: {
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-refresh/only-export-components': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
+      ...reactHooks.configs.flat.recommended.rules,
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
 ])
