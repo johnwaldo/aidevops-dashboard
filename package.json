@@ -9,7 +9,10 @@
     "client:dev": "cd client && bun run dev --port 5173",
     "build": "cd client && bun run build",
     "start": "bun server/index.ts",
-    "server:only": "bun --watch server/index.ts"
+    "server:only": "bun --watch server/index.ts",
+    "test": "bun test",
+    "typecheck": "cd client && bun run typecheck",
+    "lint": "cd client && bun run lint"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -110,7 +110,9 @@ export function FrameworkVersion() {
                   title="Update Dashboard"
                   description={`Update from v${dashUpdate.currentVersion} to v${dashUpdate.latestVersion}? This will pull the latest code, install dependencies, and rebuild the client. You'll need to restart the server afterward.`}
                   confirmLabel="Update Now"
-                  onConfirm={() => updateAction.execute({})}
+                  onConfirm={async () => {
+                    await updateAction.execute({});
+                  }}
                 >
                   <Button
                     variant="outline"

@@ -123,12 +123,15 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
 };
 
 function extractRemoteIp(req: Request, server: { requestIP?: (req: Request) => { address: string } | null }): string {
-  // Prefer proxy headers (Tailscale Serve sets X-Forwarded-For)
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+  // Only trust proxy headers when explicitly enabled (behind known proxy like Tailscale Serve)
+  // This prevents X-Forwarded-For spoofing attacks
+  if (config.trustProxy) {
+    const forwarded = req.headers.get("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0].trim();
 
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp;
+    const realIp = req.headers.get("x-real-ip");
+    if (realIp) return realIp;
+  }
 
   // Fall back to Bun's native requestIP (direct TCP connection)
   try {
