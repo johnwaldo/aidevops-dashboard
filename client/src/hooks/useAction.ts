@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { API_BASE } from "@/lib/config";
 import { getAuthHeaders } from "@/hooks/useAuth";
 
@@ -23,6 +23,10 @@ interface UseActionResult {
 export function useAction(options: UseActionOptions): UseActionResult {
   const [state, setState] = useState<ActionState>("idle");
   const [error, setError] = useState<string | null>(null);
+  
+  // Use refs for callbacks to avoid stale closures without adding to deps
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const execute = useCallback(
     async (body: Record<string, unknown>): Promise<boolean> => {
@@ -30,8 +34,8 @@ export function useAction(options: UseActionOptions): UseActionResult {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE}${options.endpoint}`, {
-          method: options.method ?? "POST",
+        const response = await fetch(`${API_BASE}${optionsRef.current.endpoint}`, {
+          method: optionsRef.current.method ?? "POST",
           headers: {
             "Content-Type": "application/json",
             ...getAuthHeaders(),
@@ -47,7 +51,7 @@ export function useAction(options: UseActionOptions): UseActionResult {
 
         const data = await response.json();
         setState("success");
-        options.onSuccess?.(data);
+        optionsRef.current.onSuccess?.(data);
 
         // Reset to idle after 2s
         setTimeout(() => setState("idle"), 2000);
@@ -56,11 +60,11 @@ export function useAction(options: UseActionOptions): UseActionResult {
         const msg = err instanceof Error ? err.message : String(err);
         setState("error");
         setError(msg);
-        options.onError?.(msg);
+        optionsRef.current.onError?.(msg);
         return false;
       }
     },
-    [options.endpoint, options.method, options.onSuccess, options.onError],
+    [], // No dependencies - using ref instead
   );
 
   const reset = useCallback(() => {

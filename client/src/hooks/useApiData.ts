@@ -21,6 +21,8 @@ export function useApiData<T>(endpoint: string, refreshInterval?: number): UseAp
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const mountedRef = useRef(true);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const fetchData = useCallback(async () => {
     try {
@@ -42,7 +44,7 @@ export function useApiData<T>(endpoint: string, refreshInterval?: number): UseAp
       if (mountedRef.current) {
         setError(String(err instanceof Error ? err.message : err));
         setLoading(false);
-        if (data !== null) setStale(true);
+        if (dataRef.current !== null) setStale(true);
       }
     }
   }, [endpoint]);

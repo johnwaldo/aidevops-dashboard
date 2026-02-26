@@ -16,6 +16,11 @@ export function useWebSocket(onMessage?: (msg: WSMessage) => void) {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
   const mountedRef = useRef(true);
+  const onMessageRef = useRef(onMessage);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -29,7 +34,6 @@ export function useWebSocket(onMessage?: (msg: WSMessage) => void) {
         setStatus("connected");
         attemptRef.current = 0;
 
-        // Request full state refresh after reconnect
         try {
           ws.send(JSON.stringify({ type: "refresh" }));
         } catch {
@@ -41,7 +45,6 @@ export function useWebSocket(onMessage?: (msg: WSMessage) => void) {
         if (!mountedRef.current) return;
         wsRef.current = null;
 
-        // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s cap
         const delay = Math.min(1000 * Math.pow(2, attemptRef.current), 30000);
         attemptRef.current++;
 
@@ -59,7 +62,7 @@ export function useWebSocket(onMessage?: (msg: WSMessage) => void) {
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data) as WSMessage;
-          onMessage?.(msg);
+          onMessageRef.current?.(msg);
         } catch {
           // Ignore malformed messages
         }
@@ -72,7 +75,8 @@ export function useWebSocket(onMessage?: (msg: WSMessage) => void) {
         reconnectTimer.current = setTimeout(connect, delay);
       }
     }
-  }, [onMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
