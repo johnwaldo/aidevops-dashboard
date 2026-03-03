@@ -31,6 +31,7 @@ import { handleVPSUpdate } from "./routes/actions/vps";
 import { handleUpdateCheck, handleUpdateApply } from "./routes/update";
 import { handleAudit } from "./routes/audit";
 import { handleSchedules, handleScheduleLog, handleScheduleToggle, handleScheduleRun } from "./routes/schedules";
+import { handleRepos, handleReposDiscover, handleReposSync, handleRepoToggle } from "./routes/repos";
 import { addClient, removeClient, clientCount } from "./ws/realtime";
 import { startFileWatchers } from "./watchers/file-watcher";
 import { startCacheCleanup } from "./cache/store";
@@ -126,6 +127,11 @@ const ROUTES: Record<string, (req: Request) => Promise<Response>> = {
   "/api/schedules/log": handleScheduleLog,
   "/api/actions/schedules/toggle": handleScheduleToggle,
   "/api/actions/schedules/run": handleScheduleRun,
+  // Phase 6 — multi-repo task management
+  "/api/repos": handleRepos,
+  "/api/repos/discover": handleReposDiscover,
+  "/api/actions/repos/sync": handleReposSync,
+  "/api/actions/repos/toggle": handleRepoToggle,
 };
 
 function extractRemoteIp(req: Request, server: { requestIP?: (req: Request) => { address: string } | null }): string {

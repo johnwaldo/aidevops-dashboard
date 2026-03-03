@@ -10,12 +10,13 @@ interface TaskCardProps {
   project: string;
   priority: string;
   agent: string | null;
+  repo?: string;
   timeLabel?: string;
   timeValue?: string;
   requires?: string;
 }
 
-export function TaskCard({ id, title, project, priority, agent, timeLabel, timeValue, requires }: TaskCardProps) {
+export function TaskCard({ id, title, project, priority, agent, repo, timeLabel, timeValue, requires }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
@@ -40,6 +41,11 @@ export function TaskCard({ id, title, project, priority, agent, timeLabel, timeV
         <p className="text-sm text-[#e4e4e7] leading-tight">{title}</p>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
+        {repo && (
+          <Badge variant="outline" className="text-[10px] border-cyan-900/50 text-cyan-400/70 px-1.5 py-0">
+            {repo}
+          </Badge>
+        )}
         <Badge variant="outline" className="text-[10px] border-[#1e1e2e] text-[#71717a] px-1.5 py-0">
           {project}
         </Badge>

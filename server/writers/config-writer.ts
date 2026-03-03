@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import type { TrackedRepo } from "../services/repo-discovery";
 
 const HOME = process.env.HOME ?? "/tmp";
 const CONFIG_DIR = join(HOME, ".aidevops/dashboard");
@@ -16,6 +17,8 @@ export interface DashboardSettings {
   refreshIntervals: Record<string, number>;
   alerts: Record<string, { enabled: boolean; threshold?: number }>;
   updateMode: "auto" | "manual";
+  /** Repos whose TODO.md files are tracked in the dashboard */
+  trackedRepos: TrackedRepo[];
 }
 
 const defaults: DashboardSettings = {
@@ -57,6 +60,7 @@ const defaults: DashboardSettings = {
     "ssl-expiry-7d": { enabled: true, threshold: 7 },
   },
   updateMode: "auto",
+  trackedRepos: [],
 };
 
 mkdirSync(CONFIG_DIR, { recursive: true });
@@ -114,6 +118,33 @@ export function updateRefreshInterval(source: string, intervalSeconds: number): 
 export function updateUpdateMode(mode: "auto" | "manual"): DashboardSettings {
   const settings = loadSettings();
   settings.updateMode = mode;
+  saveSettings(settings);
+  return settings;
+}
+
+// ── Tracked repos ──
+
+export function getTrackedRepos(): TrackedRepo[] {
+  return loadSettings().trackedRepos;
+}
+
+export function getEnabledRepos(): TrackedRepo[] {
+  return loadSettings().trackedRepos.filter((r) => r.enabled);
+}
+
+export function setTrackedRepos(repos: TrackedRepo[]): DashboardSettings {
+  const settings = loadSettings();
+  settings.trackedRepos = repos;
+  saveSettings(settings);
+  return settings;
+}
+
+export function toggleRepo(repoName: string, enabled: boolean): DashboardSettings {
+  const settings = loadSettings();
+  const repo = settings.trackedRepos.find((r) => r.name === repoName);
+  if (repo) {
+    repo.enabled = enabled;
+  }
   saveSettings(settings);
   return settings;
 }
