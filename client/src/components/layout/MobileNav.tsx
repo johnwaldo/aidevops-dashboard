@@ -21,6 +21,7 @@ const overflowPages: { page: Page; label: string }[] = [
   { page: "projects", label: "Projects" },
   { page: "agents", label: "Agents" },
   { page: "documents", label: "Documents" },
+  { page: "schedules", label: "Schedules" },
   { page: "settings", label: "Settings" },
 ];
 

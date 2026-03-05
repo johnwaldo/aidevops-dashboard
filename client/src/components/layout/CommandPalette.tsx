@@ -16,6 +16,7 @@ import {
   Coins,
   Bot,
   FileText,
+  Clock,
   Settings,
 } from "lucide-react";
 import { useApiData } from "@/hooks/useApiData";
@@ -81,6 +82,7 @@ const pages = [
   { name: "Tokens & Cost", page: "tokens", icon: Coins },
   { name: "Agents", page: "agents", icon: Bot },
   { name: "Documents", page: "documents", icon: FileText },
+  { name: "Schedules", page: "schedules", icon: Clock },
   { name: "Settings", page: "settings", icon: Settings },
 ];
 
