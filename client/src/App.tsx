@@ -17,6 +17,7 @@ import { TokensPage } from "@/pages/TokensPage";
 import { AgentsPage } from "@/pages/AgentsPage";
 import { DocumentsPage } from "@/pages/DocumentsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { SchedulesPage } from "@/pages/SchedulesPage";
 
 export type Page =
   | "overview"
@@ -27,6 +28,7 @@ export type Page =
   | "tokens"
   | "agents"
   | "documents"
+  | "schedules"
   | "settings";
 
 const pages: Record<Page, () => React.JSX.Element> = {
@@ -38,6 +40,7 @@ const pages: Record<Page, () => React.JSX.Element> = {
   tokens: TokensPage,
   agents: AgentsPage,
   documents: DocumentsPage,
+  schedules: SchedulesPage,
   settings: SettingsPage,
 };
 

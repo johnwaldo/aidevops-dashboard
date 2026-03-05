@@ -7,6 +7,7 @@ import {
   Coins,
   Bot,
   FileText,
+  Clock,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const navItems: { page: Page; label: string; icon: React.ElementType }[] = [
   { page: "tokens", label: "Tokens", icon: Coins },
   { page: "agents", label: "Agents", icon: Bot },
   { page: "documents", label: "Documents", icon: FileText },
+  { page: "schedules", label: "Schedules", icon: Clock },
   { page: "settings", label: "Settings", icon: Settings },
 ];
 
