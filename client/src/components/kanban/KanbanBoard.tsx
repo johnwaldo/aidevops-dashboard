@@ -20,6 +20,7 @@ interface Task {
   estimate: string;
   started: string | null;
   completed: string | null;
+  repo?: string;
 }
 
 interface TasksData {
@@ -50,13 +51,14 @@ const columnConfig: { key: ColumnKey; title: string; highlight?: boolean; create
   { key: "recentlyCompleted", title: "Completed" },
 ];
 
-function getTaskProps(task: Task, columnKey: ColumnKey) {
+function getTaskProps(task: Task, columnKey: ColumnKey, showRepo: boolean) {
   const base = {
     id: task.id,
     title: task.title,
     project: task.tags?.[0] ?? "",
     priority: task.priority,
     agent: task.agents?.[0] ?? null,
+    repo: showRepo ? task.repo : undefined,
   };
 
   switch (columnKey) {
@@ -83,12 +85,21 @@ function mapApiToColumns(data: TasksData): Record<ColumnKey, Task[]> {
   };
 }
 
-export function KanbanBoard() {
-  const { data, loading, error, refresh } = useApiData<TasksData>("tasks", 30);
+interface KanbanBoardProps {
+  /** Filter tasks to a specific repo, or "all" for merged view */
+  selectedRepo?: string;
+}
+
+export function KanbanBoard({ selectedRepo = "all" }: KanbanBoardProps) {
+  const endpoint = selectedRepo && selectedRepo !== "all" ? `tasks?repo=${selectedRepo}` : "tasks";
+  const { data, loading, error, refresh } = useApiData<TasksData>(endpoint, 30);
   const [columns, setColumns] = useState<Record<ColumnKey, string[]> | null>(null);
   const [taskMap, setTaskMap] = useState<Record<string, Task>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  // Show repo badges when viewing all repos
+  const showRepo = selectedRepo === "all";
 
   const moveAction = useAction({
     endpoint: "/api/actions/tasks/move",
@@ -169,6 +180,7 @@ export function KanbanBoard() {
       return updated;
     });
 
+    // The task ID is already composite (repo:tNNN) — the server will parse it
     const success = await moveAction.execute({
       taskId: activeTaskId,
       from: columnToSection[sourceCol],
@@ -210,7 +222,7 @@ export function KanbanBoard() {
                 itemIds={columns[key]}
                 headerExtra={
                   createColumn ? (
-                    <TaskCreateDialog defaultColumn={createColumn} onCreated={refresh}>
+                    <TaskCreateDialog defaultColumn={createColumn} defaultRepo={selectedRepo !== "all" ? selectedRepo : undefined} onCreated={refresh}>
                       <button className="flex h-5 w-5 items-center justify-center rounded text-[#71717a] hover:text-[#e4e4e7] hover:bg-[#1e1e2e] transition-colors">
                         <Plus className="h-3 w-3" />
                       </button>
@@ -221,7 +233,7 @@ export function KanbanBoard() {
                 {columns[key].map((taskId) => {
                   const task = taskMap[taskId];
                   if (!task) return null;
-                  const props = getTaskProps(task, key);
+                  const props = getTaskProps(task, key, showRepo);
                   return <TaskCard key={taskId} {...props} />;
                 })}
               </KanbanColumn>
@@ -231,7 +243,7 @@ export function KanbanBoard() {
           <DragOverlay>
             {activeTask && activeCol ? (
               <div className="opacity-80">
-                <TaskCard {...getTaskProps(activeTask, activeCol)} />
+                <TaskCard {...getTaskProps(activeTask, activeCol, showRepo)} />
               </div>
             ) : null}
           </DragOverlay>

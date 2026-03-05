@@ -21,9 +21,11 @@ import {
 import { Loader2, Plus } from "lucide-react";
 import { useAction } from "@/hooks/useAction";
 import { useToast } from "@/components/actions/Toaster";
+import { useRepos } from "@/hooks/useRepos";
 
 interface TaskCreateDialogProps {
   defaultColumn?: string;
+  defaultRepo?: string;
   onCreated?: () => void;
   children?: React.ReactNode;
 }
@@ -43,13 +45,15 @@ const priorities = [
   { value: "P3", label: "P3 - Low" },
 ];
 
-export function TaskCreateDialog({ defaultColumn = "backlog", onCreated, children }: TaskCreateDialogProps) {
+export function TaskCreateDialog({ defaultColumn = "backlog", defaultRepo, onCreated, children }: TaskCreateDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [column, setColumn] = useState(defaultColumn);
   const [priority, setPriority] = useState("");
   const [estimate, setEstimate] = useState("");
   const [project, setProject] = useState("");
+  const [repo, setRepo] = useState(defaultRepo ?? "");
+  const { enabledRepos } = useRepos();
   const { showToast } = useToast();
 
   const action = useAction({
@@ -71,6 +75,7 @@ export function TaskCreateDialog({ defaultColumn = "backlog", onCreated, childre
     setPriority("");
     setEstimate("");
     setProject("");
+    setRepo(defaultRepo ?? "");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -83,6 +88,7 @@ export function TaskCreateDialog({ defaultColumn = "backlog", onCreated, childre
       ...(priority && { priority }),
       ...(estimate && { estimate }),
       ...(project && { project }),
+      ...(repo && { repo }),
     });
   }
 
@@ -175,6 +181,27 @@ export function TaskCreateDialog({ defaultColumn = "backlog", onCreated, childre
                 />
               </div>
             </div>
+
+            {enabledRepos.length > 1 && (
+              <div className="grid gap-2">
+                <Label className="text-xs text-[#71717a]">Repository</Label>
+                <Select value={repo || "default"} onValueChange={(v) => setRepo(v === "default" ? "" : v)}>
+                  <SelectTrigger className="bg-[#0a0a0f] border-[#1e1e2e] text-[#e4e4e7] w-full">
+                    <SelectValue placeholder="Default (aidevops)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#111118] border-[#1e1e2e]">
+                    <SelectItem value="default" className="text-[#e4e4e7]">
+                      Default (aidevops)
+                    </SelectItem>
+                    {enabledRepos.map((r) => (
+                      <SelectItem key={r.name} value={r.name} className="text-[#e4e4e7]">
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
